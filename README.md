@@ -1,1 +1,1 @@
-# fastclass
+# ClassAct - Class file parser
