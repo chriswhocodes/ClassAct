@@ -1,6 +1,8 @@
 package com.chrisnewland.classact;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MethodInfo {
@@ -10,6 +12,8 @@ public class MethodInfo {
     private int descriptorIndex;
 
     private Map<Attribute, Object> attributeMap = new HashMap<>();
+
+    private List<BytecodeLine> bytecodeLines = new ArrayList<>();
 
     public MethodInfo(int accessFlags, int nameIndex, int descriptorIndex) {
         this.accessFlags = accessFlags;
@@ -35,5 +39,13 @@ public class MethodInfo {
 
     public Object getAttribute(Attribute attribute) {
         return attributeMap.get(attribute);
+    }
+
+    public void addBytecodeLine(BytecodeLine bytecodeLine) {
+        bytecodeLines.add(bytecodeLine);
+    }
+
+    public List<BytecodeLine> getBytecodeLines() {
+        return bytecodeLines;
     }
 }

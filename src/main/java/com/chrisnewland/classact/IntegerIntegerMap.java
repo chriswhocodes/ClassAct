@@ -3,7 +3,7 @@ package com.chrisnewland.classact;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class LineNumberTable extends LinkedHashMap<Integer, Integer> {
+public class IntegerIntegerMap extends LinkedHashMap<Integer, Integer> {
 
     @Override
     public String toString() {

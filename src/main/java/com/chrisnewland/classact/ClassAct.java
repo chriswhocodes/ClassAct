@@ -10,7 +10,7 @@ import java.util.List;
 
 // https://asm.ow2.io/asm4-guide.pdf
 
-public class ClassRead implements Serializable {
+public class ClassAct implements Serializable {
 
     private String[] tableUTF8;
     private CR_Class[] array_CR_Class;
@@ -33,7 +33,7 @@ public class ClassRead implements Serializable {
         for (int i = 0; i < count; i++) {
             long start = System.nanoTime();
 
-            new ClassRead(classFile);
+            new ClassAct(classFile);
 
             long stop = System.nanoTime();
 
@@ -43,7 +43,7 @@ public class ClassRead implements Serializable {
         }
     }
 
-    public ClassRead(File classFile) throws Exception {
+    public ClassAct(File classFile) throws Exception {
         dis = new DataInputStream(new BufferedInputStream(new FileInputStream(classFile)));
 
         int magic = dis.readInt();
@@ -139,11 +139,21 @@ public class ClassRead implements Serializable {
         for (MethodInfo methodInfo : methodInfoList) {
             info(tableUTF8[methodInfo.getNameIndex()] + " " + tableUTF8[methodInfo.getDescriptorIndex()]);
 
-            LineNumberTable lineNumberTable = (LineNumberTable) methodInfo.getAttribute(Attribute.LineNumberTable);
+            IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
 
             if (lineNumberTable != null) {
+                info("LineNumberTable:");
                 info(lineNumberTable.toString());
             }
+
+            List<BytecodeLine> bytecodeLines = methodInfo.getBytecodeLines();
+
+            info("Bytecode:");
+
+            for (BytecodeLine line : bytecodeLines) {
+                info(line.getBci() + " : " + line.getInstruction() + " " + line.getOperandData().toString());
+            }
+
         }
     }
 
@@ -547,6 +557,13 @@ public class ClassRead implements Serializable {
             int extraBytes = instruction.getExtraBytes();
 
             if (extraBytes > 0) {
+
+                ListOfInteger operandData = new ListOfInteger();
+
+                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+
+                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
+
                 debug("processCode instruction: " + instruction + " has extra bytes " + extraBytes);
 
                 for (int b = 0; b < extraBytes; b++) {
@@ -554,10 +571,15 @@ public class ClassRead implements Serializable {
 
                     info("processCode extraByte[" + b + "] " + param);
 
+                    operandData.add(param);
+
                     currentMethodBCI++;
                 }
             } else if (extraBytes == -1) {
                 processVariableLengthInstruction(instruction);
+            } else {
+                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, new NoOperands());
+                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
             }
 
             currentMethodBCI++;
@@ -566,20 +588,34 @@ public class ClassRead implements Serializable {
 
     private void processVariableLengthInstruction(Instruction instruction) throws IOException {
         switch (instruction) {
-            case LOOKUPSWITCH:
-                processLookupSwitch(dis);
-                break;
-            case TABLESWITCH:
-                processTableSwitch(dis);
-                break;
-            case WIDE:
-                processWide(dis);
-                break;
+            case LOOKUPSWITCH: {
+                SwitchTable operandData = new SwitchTable();
+                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
+                processLookupSwitch(dis, operandData);
+            }
+            break;
+            case TABLESWITCH: {
+                SwitchTable operandData = new SwitchTable();
+                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
+                processTableSwitch(dis, operandData);
+            }
+            break;
+            case WIDE: {
+                ListOfInteger operandData = new ListOfInteger();
+                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
+                processWide(dis, operandData);
+            }
+            break;
         }
     }
 
-    private void processWide(DataInputStream dis) throws IOException {
+    private void processWide(DataInputStream dis, ListOfInteger operandData) throws IOException {
         int nextOpcode = dis.readUnsignedByte();
+
+        operandData.add(nextOpcode);
 
         currentMethodBCI++;
 
@@ -589,6 +625,11 @@ public class ClassRead implements Serializable {
             int countByte1 = dis.readUnsignedByte();
             int countByte2 = dis.readUnsignedByte();
 
+            operandData.add(indexByte1);
+            operandData.add(indexByte2);
+            operandData.add(countByte1);
+            operandData.add(countByte2);
+
             debug("processWide iinc: " + indexByte1 + ", " + indexByte2 + ", " + countByte1 + ", " + countByte2);
 
             currentMethodBCI += 4;
@@ -596,13 +637,17 @@ public class ClassRead implements Serializable {
             int indexByte1 = dis.readUnsignedByte();
             int indexByte2 = dis.readUnsignedByte();
 
+            operandData.add(indexByte1);
+            operandData.add(indexByte2);
+
             debug("processWide " + nextOpcode + ": " + indexByte1 + ", " + indexByte2);
 
             currentMethodBCI += 2;
         }
     }
 
-    private void processLookupSwitch(DataInputStream dis) throws IOException {
+    // lookupswitch contains pairs of (key -> BCI)
+    private void processLookupSwitch(DataInputStream dis, SwitchTable operandData) throws IOException {
         int baseBCI = currentMethodBCI;
 
         int padding = 3 - (currentMethodBCI % 4);
@@ -626,6 +671,8 @@ public class ClassRead implements Serializable {
 
         debug("processLookupSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
                 + " base: " + baseBCI + " = " + defaultValue);
+
+        operandData.put(-1, defaultValue);
 
         int npairs1 = dis.readUnsignedByte();
         int npairs2 = dis.readUnsignedByte();
@@ -657,10 +704,14 @@ public class ClassRead implements Serializable {
                     + " base: " + baseBCI + " = " + offset);
 
             debug("processLookupSwitch pair[" + p + "] match: " + match + " offset: " + offset);
+
+
+            operandData.put(match, offset);
         }
     }
 
-    private void processTableSwitch(DataInputStream dis) throws IOException {
+    // entries = high - low + default, switch (x) looks up an index in the table
+    private void processTableSwitch(DataInputStream dis, SwitchTable operandData) throws IOException {
         int baseBCI = currentMethodBCI;
 
         int padding = 3 - (currentMethodBCI % 4);
@@ -684,6 +735,8 @@ public class ClassRead implements Serializable {
 
         debug("processTableSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
                 + " base: " + baseBCI + " = " + defaultValue);
+
+        operandData.put(-1, defaultValue);
 
         int lowByte1 = dis.readUnsignedByte();
         int lowByte2 = dis.readUnsignedByte();
@@ -723,6 +776,9 @@ public class ClassRead implements Serializable {
 
             debug("processTableSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
                     + " base:" + baseBCI + " = " + offset);
+
+
+            operandData.put(low + off, offset);
         }
     }
 
@@ -759,7 +815,7 @@ public class ClassRead implements Serializable {
 
         debug("processAttributeLineNumberTable line_number_table_length: " + line_number_table_length);
 
-        LineNumberTable lineNumberTable = new LineNumberTable();
+        IntegerIntegerMap lineNumberTable = new IntegerIntegerMap();
 
         for (int l = 0; l < line_number_table_length; l++) {
 
