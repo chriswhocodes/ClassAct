@@ -4,11 +4,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html
-
 // https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html
 
-// https://asm.ow2.io/asm4-guide.pdf
+// https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-6.html#jvms-6.5
 
 public class ClassAct implements Serializable {
 
@@ -139,19 +137,20 @@ public class ClassAct implements Serializable {
         for (MethodInfo methodInfo : methodInfoList) {
             info(tableUTF8[methodInfo.getNameIndex()] + " " + tableUTF8[methodInfo.getDescriptorIndex()]);
 
-            IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
-
-            if (lineNumberTable != null) {
-                info("LineNumberTable:");
-                info(lineNumberTable.toString());
-            }
-
             List<BytecodeLine> bytecodeLines = methodInfo.getBytecodeLines();
 
             info("Bytecode:");
 
             for (BytecodeLine line : bytecodeLines) {
-                info(line.getBci() + " : " + line.getInstruction() + " " + line.getOperandData().toString());
+                Instruction instruction = line.getInstruction();
+                info(line.getBci() + " : " + instruction + " " + line.getOperandData().toString(instruction, tableUTF8));
+            }
+
+            IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
+
+            if (lineNumberTable != null) {
+                info("LineNumberTable:");
+                info(lineNumberTable.toString());
             }
 
         }
@@ -187,6 +186,8 @@ public class ClassAct implements Serializable {
             ConstantPoolTag tag = ConstantPoolTag.valueOf(tagByte).get();
 
             debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
+
+            // TODO build data structure for CP
 
             switch (tag) {
                 case CONSTANT_Class:
