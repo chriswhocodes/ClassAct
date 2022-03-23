@@ -1,4 +1,4 @@
-package com.chrisnewland.classact;
+package com.chrisnewland.classact.model.constantpool;
 
 import java.util.Arrays;
 import java.util.Optional;

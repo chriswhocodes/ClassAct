@@ -1,11 +1,15 @@
 package com.chrisnewland.classact;
 
+import com.chrisnewland.classact.model.constantpool.ConstantPool;
+import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
+import com.chrisnewland.classact.model.constantpool.entry.EntryMethodRef;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ListOfInteger extends ArrayList<Integer> implements OperandData {
     @Override
-    public String toString(Instruction instruction, String[] tableUTF8) {
+    public String toString(Instruction instruction, ConstantPool constantPool) {
 
         StringBuilder builder = new StringBuilder();
 
@@ -30,7 +34,8 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData {
                 case 'c': // constant pool (1 byte)
                 {
                     int signedByte1 = get(byteIndex);
-                    builder.append("constant pool ").append(signedByte1).append(" = ").append(tableUTF8[signedByte1]);
+
+                    builder.append("constant pool ").append(signedByte1).append(" = ").append(constantPool.toString(signedByte1));
                     byteIndex++;
                 }
                 break;
@@ -39,7 +44,8 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData {
                     int signedByte1 = get(byteIndex);
                     int signedByte2 = get(byteIndex + 1);
                     int index = (signedByte1 << 8) + signedByte2;
-                    builder.append("constant pool ").append(index).append(" = ").append(tableUTF8[index]);
+
+                    builder.append("constant pool ").append(index).append(" = ").append(constantPool.toString(index));
                     byteIndex += 2;
                 }
                 break;

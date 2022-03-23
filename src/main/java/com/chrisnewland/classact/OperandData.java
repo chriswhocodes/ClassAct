@@ -1,5 +1,7 @@
 package com.chrisnewland.classact;
 
+import com.chrisnewland.classact.model.constantpool.ConstantPool;
+
 public interface OperandData {
-    String toString(Instruction instruction, String[] utf8table);
+    String toString(Instruction instruction, ConstantPool constantPool);
 }

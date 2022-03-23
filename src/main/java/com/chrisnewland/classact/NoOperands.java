@@ -1,10 +1,10 @@
 package com.chrisnewland.classact;
 
-import java.util.Arrays;
+import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
 public class NoOperands implements OperandData {
     @Override
-    public String toString(Instruction instruction, String[] tableUTF8) {
+    public String toString(Instruction instruction, ConstantPool constantPool) {
         return "";
     }
 }

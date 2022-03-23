@@ -1,11 +1,12 @@
 package com.chrisnewland.classact;
 
-import java.util.Arrays;
+import com.chrisnewland.classact.model.constantpool.ConstantPool;
+
 import java.util.Map;
 
 public class SwitchTable extends IntegerIntegerMap implements OperandData {
     @Override
-    public String toString(Instruction instruction, String[] tableUTF8) {
+    public String toString(Instruction instruction, ConstantPool constantPool) {
         StringBuilder builder = new StringBuilder();
 
         int defaultBCI = -1;

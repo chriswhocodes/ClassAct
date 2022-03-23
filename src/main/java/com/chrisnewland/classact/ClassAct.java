@@ -1,5 +1,10 @@
 package com.chrisnewland.classact;
 
+import com.chrisnewland.classact.model.constantpool.ConstantPool;
+import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
+import com.chrisnewland.classact.model.constantpool.ConstantPoolTag;
+import com.chrisnewland.classact.model.constantpool.entry.*;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,10 +15,10 @@ import java.util.List;
 
 public class ClassAct implements Serializable {
 
-    private String[] tableUTF8;
-    private CR_Class[] array_CR_Class;
-    private CR_MethodRef[] array_CR_MethodRef;
-    private CR_NameAndType[] array_CR_NameAndType;
+//    private String[] tableUTF8;
+//    private EntryClass[] array_Entry_Classes;
+//    private EntryMethodRef[] array_CR_MethodRef;
+//    private EntryNameAndType[] array_Entry_NameAndType;
 
     private List<MethodInfo> methodInfoList = new ArrayList<>();
 
@@ -22,6 +27,8 @@ public class ClassAct implements Serializable {
     private int currentPoolIndex = 0;
 
     private int currentMethodBCI = 0;
+
+    private ConstantPool constantPool;
 
     public static void main(String[] args) throws Exception {
         File classFile = new File(args[0]);
@@ -58,10 +65,12 @@ public class ClassAct implements Serializable {
 
         debug("constantPoolCount: " + constantPoolCount);
 
-        tableUTF8 = new String[constantPoolCount];
-        array_CR_Class = new CR_Class[constantPoolCount];
-        array_CR_MethodRef = new CR_MethodRef[constantPoolCount];
-        array_CR_NameAndType = new CR_NameAndType[constantPoolCount];
+        constantPool = new ConstantPool(constantPoolCount);
+
+//        tableUTF8 = new String[constantPoolCount];
+//        array_Entry_Classes = new EntryClass[constantPoolCount];
+//        array_CR_MethodRef = new EntryMethodRef[constantPoolCount];
+//        array_Entry_NameAndType = new EntryNameAndType[constantPoolCount];
 
         processConstantPool(constantPoolCount);
 
@@ -115,18 +124,22 @@ public class ClassAct implements Serializable {
     private void dumpMethods() {
         info("dumpMethods");
 
-        for (int i = 0; i < array_CR_MethodRef.length; i++) {
-            CR_MethodRef cr_methodRef = array_CR_MethodRef[i];
+        for (int i = 0; i < constantPool.size(); i++) {
 
-            if (cr_methodRef != null) {
-                CR_Class cr_class = array_CR_Class[cr_methodRef.getClassIndex()];
+            ConstantPoolEntry entry = constantPool.get(i);
 
-                String className = tableUTF8[cr_class.nameIndex];
+            if (entry instanceof EntryMethodRef) {
+                EntryMethodRef entryMethodRef = (EntryMethodRef) entry;
 
-                CR_NameAndType cr_nameAndType = array_CR_NameAndType[cr_methodRef.getNameAndTypeIndex()];
+                EntryClass entryClass = (EntryClass) constantPool.get(entryMethodRef.getClassIndex());
 
-                String methodName = tableUTF8[cr_nameAndType.nameIndex];
-                String descriptor = tableUTF8[cr_nameAndType.descriptorIndex];
+                String className = constantPool.toString(entryClass.getNameIndex());
+
+                EntryNameAndType entry_nameAndType = (EntryNameAndType) constantPool.get(entryMethodRef.getNameAndTypeIndex());
+
+                String methodName = constantPool.toString(entry_nameAndType.getNameIndex());
+
+                String descriptor = constantPool.toString(entry_nameAndType.getDescriptorIndex());
 
                 info("Class:" + className + " method:" + methodName + " descriptor:" + descriptor);
             }
@@ -135,7 +148,7 @@ public class ClassAct implements Serializable {
         report();
 
         for (MethodInfo methodInfo : methodInfoList) {
-            info(tableUTF8[methodInfo.getNameIndex()] + " " + tableUTF8[methodInfo.getDescriptorIndex()]);
+            info(constantPool.get(methodInfo.getNameIndex()).toString(constantPool) + " " + constantPool.get(methodInfo.getDescriptorIndex()).toString(constantPool));
 
             List<BytecodeLine> bytecodeLines = methodInfo.getBytecodeLines();
 
@@ -143,7 +156,7 @@ public class ClassAct implements Serializable {
 
             for (BytecodeLine line : bytecodeLines) {
                 Instruction instruction = line.getInstruction();
-                info(line.getBci() + " : " + instruction + " " + line.getOperandData().toString(instruction, tableUTF8));
+                info(line.getBci() + " : " + instruction + " " + line.getOperandData().toString(instruction, constantPool));
             }
 
             IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
@@ -152,15 +165,14 @@ public class ClassAct implements Serializable {
                 info("LineNumberTable:");
                 info(lineNumberTable.toString());
             }
-
         }
     }
 
     private void report() {
-        System.out.println("array_CR_Class      : " + reportArray(array_CR_Class));
-        System.out.println("array_CR_Method     : " + reportArray(array_CR_MethodRef));
-        System.out.println("array_CR_NameAndType: " + reportArray(array_CR_NameAndType));
-        System.out.println("tableUTF8           : " + reportArray(tableUTF8));
+//        System.out.println("array_CR_Class      : " + reportArray(array_Entry_Classes));
+//        System.out.println("array_CR_Method     : " + reportArray(array_CR_MethodRef));
+//        System.out.println("array_CR_NameAndType: " + reportArray(array_Entry_NameAndType));
+//        System.out.println("tableUTF8           : " + reportArray(tableUTF8));
     }
 
     private String reportArray(Object[] array) {
@@ -246,10 +258,9 @@ public class ClassAct implements Serializable {
 
         debug("processConstantClass nameIndex " + nameIndex);
 
-        CR_Class cr_class = new CR_Class();
-        cr_class.nameIndex = nameIndex;
+        EntryClass entryClass = new EntryClass(nameIndex);
 
-        array_CR_Class[currentPoolIndex] = cr_class;
+        constantPool.set(currentPoolIndex, entryClass);
     }
 
     private void processConstantMethodRef(DataInputStream dis) throws IOException {
@@ -261,7 +272,9 @@ public class ClassAct implements Serializable {
 
         debug("processConstantMethodRef nameAndTypeIndex " + nameAndTypeIndex);
 
-        array_CR_MethodRef[currentPoolIndex] = new CR_MethodRef(classIndex, nameAndTypeIndex);
+        EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
+
+        constantPool.set(currentPoolIndex, entryMethodRef);
     }
 
     private void processConstantInterfaceMethodRef(DataInputStream dis) throws IOException {
@@ -273,7 +286,9 @@ public class ClassAct implements Serializable {
 
         debug("processConstantInterfaceMethodRef nameAndTypeIndex " + nameAndTypeIndex);
 
-        array_CR_MethodRef[currentPoolIndex] = new CR_MethodRef(classIndex, nameAndTypeIndex);
+        EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
+
+        constantPool.set(currentPoolIndex, entryMethodRef);
     }
 
     private void processConstantFieldRef(DataInputStream dis) throws IOException {
@@ -290,6 +305,10 @@ public class ClassAct implements Serializable {
         int stringIndex = dis.readUnsignedShort();
 
         debug("processConstantString stringIndex " + stringIndex);
+
+        EntryString entryString = new EntryString(stringIndex);
+
+        constantPool.set(currentPoolIndex, entryString);
     }
 
     private void processConstantInteger(DataInputStream dis) throws IOException {
@@ -337,7 +356,9 @@ public class ClassAct implements Serializable {
 
         debug("processConstantUTF8 bytes '" + utf8String + "'");
 
-        tableUTF8[currentPoolIndex] = utf8String;
+        EntryUTF8 entryUTF8 = new EntryUTF8(utf8String);
+
+        constantPool.set(currentPoolIndex, entryUTF8);
     }
 
     private void processConstantNameAndType(DataInputStream dis) throws IOException {
@@ -349,11 +370,9 @@ public class ClassAct implements Serializable {
 
         debug("processConstantNameAndType descriptorIndex " + descriptorIndex);
 
-        CR_NameAndType cr_nameAndType = new CR_NameAndType();
-        cr_nameAndType.nameIndex = nameIndex;
-        cr_nameAndType.descriptorIndex = descriptorIndex;
+        EntryNameAndType entryNameAndType = new EntryNameAndType(nameIndex, descriptorIndex);
 
-        array_CR_NameAndType[currentPoolIndex] = cr_nameAndType;
+        constantPool.set(currentPoolIndex, entryNameAndType);
     }
 
     private void processInterfaces(int interfacesCount) throws IOException {
@@ -362,11 +381,11 @@ public class ClassAct implements Serializable {
 
             debug("processInterfaces[" + i + "] nameIndex " + nameIndex);
 
-            CR_Class cr_class = array_CR_Class[nameIndex];
-
-            String interfaceName = tableUTF8[cr_class.nameIndex];
-
-            debug("processInterfaces[" + i + "] interfaceName " + interfaceName);
+//            EntryClass entry_class = array_Entry_Classes[nameIndex];
+//
+//            String interfaceName = tableUTF8[entry_class.nameIndex];
+//
+//            debug("processInterfaces[" + i + "] interfaceName " + interfaceName);
         }
     }
 
@@ -411,8 +430,8 @@ public class ClassAct implements Serializable {
 
             debug("processMethods[" + i + "] attributesCount " + attributesCount);
 
-            info("METHOD: " + MethodAccessFlag.getFlagsString(accessFlags) + " " + tableUTF8[nameIndex] + " "
-                    + tableUTF8[descriptorIndex]);
+            info("METHOD: " + MethodAccessFlag.getFlagsString(accessFlags) + " " + constantPool.toString(nameIndex) + " "
+                    + constantPool.toString(descriptorIndex));
 
             MethodInfo methodInfo = new MethodInfo(accessFlags, nameIndex, descriptorIndex);
 
@@ -434,7 +453,7 @@ public class ClassAct implements Serializable {
 
             debug("processAttributes[" + i + "] attributeLength " + attributeLength);
 
-            String attributeName = tableUTF8[attributeNameIndex];
+            String attributeName = constantPool.toString(attributeNameIndex);
 
             debug("processAttributes attributeName: " + attributeName);
 
