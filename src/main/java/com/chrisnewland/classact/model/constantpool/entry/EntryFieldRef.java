@@ -3,12 +3,12 @@ package com.chrisnewland.classact.model.constantpool.entry;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
 
-public class EntryMethodRef implements ConstantPoolEntry
+public class EntryFieldRef implements ConstantPoolEntry
 {
 	private final int classIndex;
 	private final int nameAndTypeIndex;
 
-	public EntryMethodRef(int classIndex, int nameAndTypeIndex)
+	public EntryFieldRef(int classIndex, int nameAndTypeIndex)
 	{
 		this.classIndex = classIndex;
 		this.nameAndTypeIndex = nameAndTypeIndex;

@@ -1,45 +1,68 @@
 package com.chrisnewland.classact.model.constantpool;
 
-public class ConstantPool {
-    private ConstantPoolEntry[] entries;
+public class ConstantPool
+{
+	private ConstantPoolEntry[] entries;
 
-    public ConstantPool(int size) {
-        entries = new ConstantPoolEntry[size];
-    }
+	public ConstantPool(int size)
+	{
+		entries = new ConstantPoolEntry[size];
+	}
 
-    public void set(int index, ConstantPoolEntry entry) {
-        entries[index] = entry;
-    }
+	public void set(int index, ConstantPoolEntry entry)
+	{
+		entries[index] = entry;
 
-    public ConstantPoolEntry get(int index) {
-        return entries[index];
-    }
+		System.out.println("pool[" + index + "] = " + entry.toString());
+	}
 
-    public int size() {
-        return entries.length;
-    }
+	public ConstantPoolEntry get(int index)
+	{
+		return entries[index];
+	}
 
-    public String toString(int index) {
-        ConstantPoolEntry entry = entries[index];
+	public int size()
+	{
+		return entries.length;
+	}
 
-        if (entry == null) {
-            return "ERROR null entry at " + index;
-        }
+	public String toString(int index)
+	{
+		ConstantPoolEntry entry = entries[index];
 
-        return entry.toString(this);
-    }
+		if (entry == null)
+		{
+			return "ERROR null entry at " + index;
+		}
 
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
+		return entry.toString(this);
+	}
 
-        for (int i = 0; i < entries.length; i++) {
-            ConstantPoolEntry entry = entries[i];
+	public String getClass(int index)
+	{
+		ConstantPoolEntry entry = entries[index];
 
-            builder.append('#').append(i).append(" = ").append(entry.getType()).append(" ").append(entry);
-        }
+		return entry.getClass().getSimpleName();
+	}
 
-        return builder.toString();
-    }
+	@Override
+	public String toString()
+	{
+		StringBuilder builder = new StringBuilder();
+
+		for (int i = 0; i < entries.length; i++)
+		{
+			ConstantPoolEntry entry = entries[i];
+
+			builder.append('#')
+				   .append(i)
+				   .append(" = ")
+				   .append(entry.getType())
+				   .append(" ")
+				   .append(entry);
+		}
+
+		return builder.toString();
+	}
 
 }

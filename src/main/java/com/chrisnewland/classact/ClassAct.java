@@ -1,8 +1,11 @@
 package com.chrisnewland.classact;
 
-import com.chrisnewland.classact.model.ClassFile;
+import com.chrisnewland.classact.model.*;
+import com.chrisnewland.classact.model.attribute.Exceptions;
+import com.chrisnewland.classact.model.attribute.LocalVariableTable;
+import com.chrisnewland.classact.model.attribute.LocalVariableTableEntry;
+import com.chrisnewland.classact.model.attribute.Signature;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
-import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolTag;
 import com.chrisnewland.classact.model.constantpool.entry.*;
 
@@ -14,916 +17,1033 @@ import java.util.List;
 
 // https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-6.html#jvms-6.5
 
-public class ClassAct {
+public class ClassAct
+{
+	private DataInputStream dis;
 
-    private List<MethodInfo> methodInfoList = new ArrayList<>();
+	private int currentPoolIndex = 0;
 
-    private DataInputStream dis;
+	private int currentMethodBCI = 0;
 
-    private int currentPoolIndex = 0;
+	private ClassFile classFile;
 
-    private int currentMethodBCI = 0;
+	public static void main(String[] args) throws Exception
+	{
+		File classFile = new File(args[0]);
 
-    private ConstantPool constantPool;
+		int count = 1;
 
-    private ClassFile classFile;
+		for (int i = 0; i < count; i++)
+		{
+			long start = System.nanoTime();
 
-    public static void main(String[] args) throws Exception {
-        File classFile = new File(args[0]);
+			new ClassAct(classFile);
 
-        int count = 1;
+			long stop = System.nanoTime();
 
-        for (int i = 0; i < count; i++) {
-            long start = System.nanoTime();
+			double elapsed = (stop - start) / 1_000_000d;
 
-            new ClassAct(classFile);
+			System.out.println("elapsed: " + elapsed + "ms");
+		}
+	}
 
-            long stop = System.nanoTime();
+	public ClassAct(File classFileName) throws Exception
+	{
+		classFile = new ClassFile();
 
-            double elapsed = (stop - start) / 1_000_000d;
+		dis = new DataInputStream(new BufferedInputStream(new FileInputStream(classFileName)));
 
-            System.out.println("elapsed: " + elapsed + "ms");
-        }
-    }
+		classFile.setMagicNumber(dis.readInt());
+		classFile.setMinorVersion(dis.readUnsignedShort());
+		classFile.setMinorVersion(dis.readUnsignedShort());
 
-    public ClassAct(File classFileName) throws Exception {
+		int constantPoolCount = dis.readUnsignedShort();
 
-        classFile = new ClassFile();
+		debug("constantPoolCount: " + constantPoolCount);
 
-        dis = new DataInputStream(new BufferedInputStream(new FileInputStream(classFileName)));
+		classFile.setConstantPool(new ConstantPool(constantPoolCount));
 
-        int magic = dis.readInt();
+		processConstantPool(constantPoolCount);
 
-        int minor = dis.readUnsignedShort();
+		int accessFlags = dis.readUnsignedShort();
 
-        int major = dis.readUnsignedShort();
+		debug("accessFlags: " + Integer.toBinaryString(accessFlags));
 
-        debug("Magic: " + Integer.toHexString(magic));
-        debug("Minor: " + minor);
-        debug("Major: " + major);
+		int thisClass = dis.readUnsignedShort();
 
-        int constantPoolCount = dis.readUnsignedShort();
+		debug("thisClass: " + thisClass);
 
-        debug("constantPoolCount: " + constantPoolCount);
+		int superClass = dis.readUnsignedShort();
 
-        constantPool = new ConstantPool(constantPoolCount);
+		debug("superClass: " + superClass);
 
-        processConstantPool(constantPoolCount);
+		int interfacesCount = dis.readUnsignedShort();
 
-        int accessFlags = dis.readUnsignedShort();
+		debug("interfacesCount: " + interfacesCount);
 
-        debug("accessFlags: " + Integer.toBinaryString(accessFlags));
+		processInterfaces(interfacesCount);
 
-        int thisClass = dis.readUnsignedShort();
+		int fieldsCount = dis.readUnsignedShort();
 
-        debug("thisClass: " + thisClass);
+		debug("fieldsCount: " + fieldsCount);
 
-        int superClass = dis.readUnsignedShort();
+		processFields(fieldsCount);
 
-        debug("superClass: " + superClass);
+		int methodsCount = dis.readUnsignedShort();
 
-        int interfacesCount = dis.readUnsignedShort();
+		debug("methodsCount: " + methodsCount);
 
-        debug("interfacesCount: " + interfacesCount);
+		processMethods(methodsCount);
 
-        processInterfaces(interfacesCount);
+		int attributesCount = dis.readUnsignedShort();
 
-        int fieldsCount = dis.readUnsignedShort();
+		debug("attributesCount: " + attributesCount);
 
-        debug("fieldsCount: " + fieldsCount);
+		processAttributes(attributesCount);
 
-        processFields(fieldsCount);
+		classFile.dumpMethods();
+	}
 
-        int methodsCount = dis.readUnsignedShort();
+	public ClassFile getClassFile()
+	{
+		return classFile;
+	}
 
-        debug("methodsCount: " + methodsCount);
+	private void debug(String message)
+	{
+		System.out.println(message);
+	}
 
-        processMethods(methodsCount);
+	private void info(String message)
+	{
+		System.out.println(message);
+	}
+
+	private void processConstantPool(int constantPoolCount) throws IOException
+	{
+		for (int i = 0; i < constantPoolCount - 1; i++)
+		{
+			int tagByte = dis.readUnsignedByte();
+
+			currentPoolIndex = i + 1;
+
+			ConstantPoolTag tag = ConstantPoolTag.valueOf(tagByte)
+												 .get();
+
+			debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
+
+			switch (tag)
+			{
+			case CONSTANT_Class:
+				processConstantClass(dis);
+				break;
+			case CONSTANT_Fieldref:
+				processConstantFieldRef(dis);
+				break;
+			case CONSTANT_Methodref:
+				processConstantMethodRef(dis);
+				break;
+			case CONSTANT_InterfaceMethodref:
+				processConstantInterfaceMethodRef(dis);
+				break;
+			case CONSTANT_String:
+				processConstantString(dis);
+				break;
+			case CONSTANT_Integer:
+				processConstantInteger(dis);
+				break;
+			case CONSTANT_Float:
+				processConstantFloat(dis);
+				break;
+			case CONSTANT_Long:
+				processConstantLong(dis);
+				i++; // 8 byte constants use 2 pool slots
+				break;
+			case CONSTANT_Double:
+				processConstantDouble(dis);
+				i++; // 8 byte constants use 2 pool slots
+				break;
+			case CONSTANT_NameAndType:
+				processConstantNameAndType(dis);
+				break;
+			case CONSTANT_Utf8:
+				processConstantUTF8(dis);
+				break;
+			case CONSTANT_MethodHandle:
+				throw new UnsupportedOperationException();
+			case CONSTANT_MethodType:
+				throw new UnsupportedOperationException();
+			case CONSTANT_Dynamic:
+				throw new UnsupportedOperationException();
+			case CONSTANT_InvokeDynamic:
+				throw new UnsupportedOperationException();
+			case CONSTANT_Module:
+				throw new UnsupportedOperationException();
+			case CONSTANT_Package:
+				throw new UnsupportedOperationException();
+			}
+		}
+	}
+
+	private void processConstantClass(DataInputStream dis) throws IOException
+	{
+		int nameIndex = dis.readUnsignedShort();
+
+		debug("processConstantClass nameIndex " + nameIndex);
+
+		EntryClass entryClass = new EntryClass(nameIndex);
 
-        int attributesCount = dis.readUnsignedShort();
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryClass);
+	}
 
-        debug("attributesCount: " + attributesCount);
+	private void processConstantMethodRef(DataInputStream dis) throws IOException
+	{
+		int classIndex = dis.readUnsignedShort();
 
-        processAttributes(attributesCount);
+		debug("processConstantMethodRef classIndex " + classIndex);
 
-        dumpMethods();
-    }
+		int nameAndTypeIndex = dis.readUnsignedShort();
 
-    public ClassFile getClassFile()
-    {
-        return classFile;
-    }
+		debug("processConstantMethodRef nameAndTypeIndex " + nameAndTypeIndex);
 
-    private void debug(String message) {
-        System.out.println(message);
-    }
-
-    private void info(String message) {
-        System.out.println(message);
-    }
-
-    private void dumpMethods() {
-        info("dumpMethods");
-
-        for (int i = 0; i < constantPool.size(); i++) {
-
-            ConstantPoolEntry entry = constantPool.get(i);
-
-            if (entry instanceof EntryMethodRef) {
-                EntryMethodRef entryMethodRef = (EntryMethodRef) entry;
-
-                EntryClass entryClass = (EntryClass) constantPool.get(entryMethodRef.getClassIndex());
-
-                String className = constantPool.toString(entryClass.getNameIndex());
-
-                EntryNameAndType entryNameAndType = (EntryNameAndType) constantPool.get(entryMethodRef.getNameAndTypeIndex());
-
-                String methodName = constantPool.toString(entryNameAndType.getNameIndex());
-
-                String descriptor = constantPool.toString(entryNameAndType.getDescriptorIndex());
-
-                info("Class:" + className + " method:" + methodName + " descriptor:" + descriptor);
-            }
-        }
-
-        for (MethodInfo methodInfo : methodInfoList) {
-            info(constantPool.get(methodInfo.getNameIndex()).toString(constantPool) + " " + constantPool.get(methodInfo.getDescriptorIndex()).toString(constantPool));
-
-            List<BytecodeLine> bytecodeLines = methodInfo.getBytecodeLines();
-
-            info("Bytecode:");
-
-            for (BytecodeLine line : bytecodeLines) {
-                Instruction instruction = line.getInstruction();
-                info(line.getBci() + " : " + instruction + " " + line.getOperandData().toString(line, constantPool));
-            }
-
-            IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
-
-            if (lineNumberTable != null) {
-                info("LineNumberTable:");
-                info(lineNumberTable.toString());
-            }
-        }
-    }
+		EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
 
-    private void processConstantPool(int constantPoolCount) throws IOException {
-        for (int i = 0; i < constantPoolCount - 1; i++) {
-            int tagByte = dis.readUnsignedByte();
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryMethodRef);
+	}
 
-            currentPoolIndex = i + 1;
+	private void processConstantInterfaceMethodRef(DataInputStream dis) throws IOException
+	{
+		int classIndex = dis.readUnsignedShort();
 
-            ConstantPoolTag tag = ConstantPoolTag.valueOf(tagByte).get();
+		debug("processConstantInterfaceMethodRef classIndex " + classIndex);
 
-            debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
+		int nameAndTypeIndex = dis.readUnsignedShort();
 
-            switch (tag) {
-                case CONSTANT_Class:
-                    processConstantClass(dis);
-                    break;
-                case CONSTANT_Fieldref:
-                    processConstantFieldRef(dis);
-                    break;
-                case CONSTANT_Methodref:
-                    processConstantMethodRef(dis);
-                    break;
-                case CONSTANT_InterfaceMethodref:
-                    processConstantInterfaceMethodRef(dis);
-                    break;
-                case CONSTANT_String:
-                    processConstantString(dis);
-                    break;
-                case CONSTANT_Integer:
-                    processConstantInteger(dis);
-                    break;
-                case CONSTANT_Float:
-                    processConstantFloat(dis);
-                    break;
-                case CONSTANT_Long:
-                    processConstantLong(dis);
-                    i++;
-                    break;
-                case CONSTANT_Double:
-                    processConstantDouble(dis);
-                    i++;
-                    break;
-                case CONSTANT_NameAndType:
-                    processConstantNameAndType(dis);
-                    break;
-                case CONSTANT_Utf8:
-                    processConstantUTF8(dis);
-                    break;
-                case CONSTANT_MethodHandle:
-                    throw new UnsupportedOperationException();
-                case CONSTANT_MethodType:
-                    throw new UnsupportedOperationException();
-                case CONSTANT_Dynamic:
-                    throw new UnsupportedOperationException();
-                case CONSTANT_InvokeDynamic:
-                    throw new UnsupportedOperationException();
-                case CONSTANT_Module:
-                    throw new UnsupportedOperationException();
-                case CONSTANT_Package:
-                    throw new UnsupportedOperationException();
-            }
-        }
-    }
+		debug("processConstantInterfaceMethodRef nameAndTypeIndex " + nameAndTypeIndex);
 
-    private void processConstantClass(DataInputStream dis) throws IOException {
-        int nameIndex = dis.readUnsignedShort();
+		EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
 
-        debug("processConstantClass nameIndex " + nameIndex);
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryMethodRef);
+	}
 
-        EntryClass entryClass = new EntryClass(nameIndex);
+	private void processConstantFieldRef(DataInputStream dis) throws IOException
+	{
+		int classIndex = dis.readUnsignedShort();
 
-        constantPool.set(currentPoolIndex, entryClass);
-    }
+		debug("processConstantFieldRef classIndex " + classIndex);
 
-    private void processConstantMethodRef(DataInputStream dis) throws IOException {
-        int classIndex = dis.readUnsignedShort();
+		int nameAndTypeIndex = dis.readUnsignedShort();
 
-        debug("processConstantMethodRef classIndex " + classIndex);
+		debug("processConstantFieldRef nameAndTypeIndex " + nameAndTypeIndex);
 
-        int nameAndTypeIndex = dis.readUnsignedShort();
+		EntryFieldRef entryFieldRef = new EntryFieldRef(classIndex, nameAndTypeIndex);
 
-        debug("processConstantMethodRef nameAndTypeIndex " + nameAndTypeIndex);
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryFieldRef);
+	}
 
-        EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
+	private void processConstantString(DataInputStream dis) throws IOException
+	{
+		int stringIndex = dis.readUnsignedShort();
 
-        constantPool.set(currentPoolIndex, entryMethodRef);
-    }
+		debug("processConstantString stringIndex " + stringIndex);
 
-    private void processConstantInterfaceMethodRef(DataInputStream dis) throws IOException {
-        int classIndex = dis.readUnsignedShort();
+		EntryString entryString = new EntryString(stringIndex);
 
-        debug("processConstantInterfaceMethodRef classIndex " + classIndex);
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryString);
+	}
 
-        int nameAndTypeIndex = dis.readUnsignedShort();
+	private void processConstantInteger(DataInputStream dis) throws IOException
+	{
+		int value = dis.readInt();
 
-        debug("processConstantInterfaceMethodRef nameAndTypeIndex " + nameAndTypeIndex);
+		debug("processConstantInteger bytes " + value);
 
-        EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
+		EntryInteger entryInteger = new EntryInteger(value);
 
-        constantPool.set(currentPoolIndex, entryMethodRef);
-    }
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryInteger);
+	}
 
-    private void processConstantFieldRef(DataInputStream dis) throws IOException {
-        int classIndex = dis.readUnsignedShort();
+	private void processConstantFloat(DataInputStream dis) throws IOException
+	{
+		int bits = dis.readInt();
 
-        debug("processConstantFieldRef classIndex " + classIndex);
+		debug("processConstantFloat #" + currentPoolIndex + "  = " + bits);
 
-        int nameAndTypeIndex = dis.readUnsignedShort();
+		EntryFloat entryFloat = new EntryFloat(bits);
 
-        debug("processConstantFieldRef nameAndTypeIndex " + nameAndTypeIndex);
-    }
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryFloat);
+	}
 
-    private void processConstantString(DataInputStream dis) throws IOException {
-        int stringIndex = dis.readUnsignedShort();
+	private void processConstantLong(DataInputStream dis) throws IOException
+	{
+		int high_bytes = dis.readInt();
 
-        debug("processConstantString stringIndex " + stringIndex);
+		debug("processConstantLong high_bytes " + high_bytes);
 
-        EntryString entryString = new EntryString(stringIndex);
+		int low_bytes = dis.readInt();
 
-        constantPool.set(currentPoolIndex, entryString);
-    }
+		debug("processConstantLong low_bytes " + low_bytes);
 
-    private void processConstantInteger(DataInputStream dis) throws IOException {
-        int bytes = dis.readInt();
+		long value = ((long) high_bytes << 32) + low_bytes;
 
-        debug("processConstantInteger bytes " + bytes);
-    }
+		EntryLong entryLong = new EntryLong(value);
 
-    private void processConstantFloat(DataInputStream dis) throws IOException {
-        int bytes = dis.readInt();
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryLong);
+	}
 
-        debug("processConstantFloat bytes " + bytes);
-    }
+	private void processConstantDouble(DataInputStream dis) throws IOException
+	{
+		int high_bytes = dis.readInt();
 
-    private void processConstantLong(DataInputStream dis) throws IOException {
-        int high_bytes = dis.readInt();
+		debug("processConstantDouble high_bytes " + high_bytes);
 
-        debug("processConstantLong high_bytes " + high_bytes);
+		int low_bytes = dis.readInt();
 
-        int low_bytes = dis.readInt();
+		debug("processConstantDouble low_bytes " + low_bytes);
 
-        debug("processConstantLong low_bytes " + low_bytes);
-    }
+		long bits = ((long) high_bytes << 32) + low_bytes;
 
-    private void processConstantDouble(DataInputStream dis) throws IOException {
-        int high_bytes = dis.readInt();
+		EntryDouble entryDouble = new EntryDouble(bits);
 
-        debug("processConstantDouble high_bytes " + high_bytes);
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryDouble);
+	}
 
-        int low_bytes = dis.readInt();
+	private void processConstantUTF8(DataInputStream dis) throws IOException
+	{
+		int length = dis.readUnsignedShort();
 
-        debug("processConstantDouble low_bytes " + low_bytes);
-    }
+		debug("processConstantUTF8 length " + length);
 
-    private void processConstantUTF8(DataInputStream dis) throws IOException {
-        int length = dis.readUnsignedShort();
+		byte[] utf8bytes = new byte[length];
 
-        debug("processConstantUTF8 length " + length);
+		dis.read(utf8bytes);
 
-        byte[] utf8bytes = new byte[length];
+		String utf8String = new String(utf8bytes);
 
-        dis.read(utf8bytes);
+		debug("processConstantUTF8 bytes '" + utf8String + "'");
 
-        String utf8String = new String(utf8bytes);
+		EntryUTF8 entryUTF8 = new EntryUTF8(utf8String);
 
-        debug("processConstantUTF8 bytes '" + utf8String + "'");
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryUTF8);
+	}
 
-        EntryUTF8 entryUTF8 = new EntryUTF8(utf8String);
+	private void processConstantNameAndType(DataInputStream dis) throws IOException
+	{
+		int nameIndex = dis.readUnsignedShort();
 
-        constantPool.set(currentPoolIndex, entryUTF8);
-    }
+		debug("processConstantNameAndType nameIndex " + nameIndex);
 
-    private void processConstantNameAndType(DataInputStream dis) throws IOException {
-        int nameIndex = dis.readUnsignedShort();
+		int descriptorIndex = dis.readUnsignedShort();
 
-        debug("processConstantNameAndType nameIndex " + nameIndex);
+		debug("processConstantNameAndType descriptorIndex " + descriptorIndex);
 
-        int descriptorIndex = dis.readUnsignedShort();
+		EntryNameAndType entryNameAndType = new EntryNameAndType(nameIndex, descriptorIndex);
 
-        debug("processConstantNameAndType descriptorIndex " + descriptorIndex);
+		classFile.getConstantPool()
+				 .set(currentPoolIndex, entryNameAndType);
+	}
 
-        EntryNameAndType entryNameAndType = new EntryNameAndType(nameIndex, descriptorIndex);
+	private void processInterfaces(int interfacesCount) throws IOException
+	{
+		for (int i = 0; i < interfacesCount; i++)
+		{
+			int nameIndex = dis.readUnsignedShort();
 
-        constantPool.set(currentPoolIndex, entryNameAndType);
-    }
+			debug("processInterfaces[" + i + "] nameIndex " + nameIndex);
 
-    private void processInterfaces(int interfacesCount) throws IOException {
-        for (int i = 0; i < interfacesCount; i++) {
-            int nameIndex = dis.readUnsignedShort();
+			//            EntryClass entry_class = array_Entry_Classes[nameIndex];
+			//
+			//            String interfaceName = tableUTF8[entry_class.nameIndex];
+			//
+			//            debug("processInterfaces[" + i + "] interfaceName " + interfaceName);
+		}
+	}
 
-            debug("processInterfaces[" + i + "] nameIndex " + nameIndex);
+	private void processFields(int fieldsCount) throws IOException
+	{
+		for (int i = 0; i < fieldsCount; i++)
+		{
+			int accessFlags = dis.readUnsignedShort();
 
-//            EntryClass entry_class = array_Entry_Classes[nameIndex];
-//
-//            String interfaceName = tableUTF8[entry_class.nameIndex];
-//
-//            debug("processInterfaces[" + i + "] interfaceName " + interfaceName);
-        }
-    }
+			debug("processFields[" + i + "] accessFlags " + accessFlags);
 
-    private void processFields(int fieldsCount) throws IOException {
-        for (int i = 0; i < fieldsCount; i++) {
-            int accessFlags = dis.readUnsignedShort();
+			int nameIndex = dis.readUnsignedShort();
 
-            debug("processFields[" + i + "] accessFlags " + accessFlags);
+			debug("processFields[" + i + "] nameIndex " + nameIndex);
 
-            int nameIndex = dis.readUnsignedShort();
+			int descriptorIndex = dis.readUnsignedShort();
 
-            debug("processFields[" + i + "] nameIndex " + nameIndex);
+			debug("processFields[" + i + "] descriptorIndex " + descriptorIndex);
 
-            int descriptorIndex = dis.readUnsignedShort();
+			int attributesCount = dis.readUnsignedShort();
 
-            debug("processFields[" + i + "] descriptorIndex " + descriptorIndex);
+			debug("processFields[" + i + "] attributesCount " + attributesCount);
 
-            int attributesCount = dis.readUnsignedShort();
+			processAttributes(attributesCount);
+		}
+	}
 
-            debug("processFields[" + i + "] attributesCount " + attributesCount);
+	private void processMethods(int methodsCount) throws IOException
+	{
+		for (int i = 0; i < methodsCount; i++)
+		{
+			int accessFlags = dis.readUnsignedShort();
 
-            processAttributes(attributesCount);
-        }
-    }
+			debug("processMethods[" + i + "] accessFlags " + accessFlags);
 
-    private void processMethods(int methodsCount) throws IOException {
+			int nameIndex = dis.readUnsignedShort();
 
-        for (int i = 0; i < methodsCount; i++) {
-            int accessFlags = dis.readUnsignedShort();
+			debug("processMethods[" + i + "] nameIndex " + nameIndex);
 
-            debug("processMethods[" + i + "] accessFlags " + accessFlags);
+			int descriptorIndex = dis.readUnsignedShort();
 
-            int nameIndex = dis.readUnsignedShort();
+			debug("processMethods[" + i + "] descriptorIndex " + descriptorIndex);
 
-            debug("processMethods[" + i + "] nameIndex " + nameIndex);
+			int attributesCount = dis.readUnsignedShort();
 
-            int descriptorIndex = dis.readUnsignedShort();
+			debug("processMethods[" + i + "] attributesCount " + attributesCount);
 
-            debug("processMethods[" + i + "] descriptorIndex " + descriptorIndex);
+			info("METHOD: " + MethodAccessFlag.getFlagsString(accessFlags) + " " + classFile.getConstantPool()
+																							.toString(nameIndex) + " "
+					+ classFile.getConstantPool()
+							   .toString(descriptorIndex));
 
-            int attributesCount = dis.readUnsignedShort();
+			MethodInfo methodInfo = new MethodInfo(accessFlags, nameIndex, descriptorIndex);
 
-            debug("processMethods[" + i + "] attributesCount " + attributesCount);
+			classFile.getMethodInfoList()
+					 .add(methodInfo);
 
-            info("METHOD: " + MethodAccessFlag.getFlagsString(accessFlags) + " " + constantPool.toString(nameIndex) + " "
-                    + constantPool.toString(descriptorIndex));
+			processAttributes(attributesCount);
+		}
+	}
 
-            MethodInfo methodInfo = new MethodInfo(accessFlags, nameIndex, descriptorIndex);
+	private void processAttributes(int attributesCount) throws IOException
+	{
+		for (int i = 0; i < attributesCount; i++)
+		{
+			int attributeNameIndex = dis.readUnsignedShort();
 
-            //todo why not all sigs printed here?
+			debug("processAttributes[" + i + "] attributeNameIndex " + attributeNameIndex);
 
-            methodInfoList.add(methodInfo);
+			int attributeLength = dis.readInt();
 
-            processAttributes(attributesCount);
-        }
-    }
+			debug("processAttributes[" + i + "] attributeLength " + attributeLength);
 
-    private void processAttributes(int attributesCount) throws IOException {
-        for (int i = 0; i < attributesCount; i++) {
-            int attributeNameIndex = dis.readUnsignedShort();
+			String attributeName = classFile.getConstantPool()
+											.toString(attributeNameIndex);
 
-            debug("processAttributes[" + i + "] attributeNameIndex " + attributeNameIndex);
+			debug("processAttributes attributeName: " + attributeName);
 
-            int attributeLength = dis.readInt();
+			processSingleAttribute(attributeName, attributeLength);
+		}
+	}
 
-            debug("processAttributes[" + i + "] attributeLength " + attributeLength);
+	private void processSingleAttribute(String attributeName, int attributeLength) throws IOException
+	{
+		debug("processSingleAttribute " + attributeName + " attributeLength " + attributeLength);
 
-            String attributeName = constantPool.toString(attributeNameIndex);
+		Attribute attribute = Attribute.valueOf(attributeName);
 
-            debug("processAttributes attributeName: " + attributeName);
+		switch (attribute)
+		{
 
-            processSingleAttribute(attributeName, attributeLength);
-        }
-    }
+		case Code:
+			processAttributeCode(dis);
+			break;
 
-    private void processSingleAttribute(String attributeName, int attributeLength) throws IOException {
-        debug("processSingleAttribute " + attributeName + " attributeLength " + attributeLength);
+		case LineNumberTable:
+			processAttributeLineNumberTable(dis);
+			break;
 
-        Attribute attribute = Attribute.valueOf(attributeName);
+		case InnerClasses:
+			processInnerClasses(dis);
+			break;
 
-        switch (attribute) {
+		case Signature:
+			processSignature(dis);
+			break;
 
-            case Code:
-                processAttributeCode(dis);
-                break;
+		case Synthetic:
+			processSynthetic(dis);
+			break;
 
-            case LineNumberTable:
-                processAttributeLineNumberTable(dis);
-                break;
+		case ConstantValue:
+			processConstantValue(dis);
+			break;
 
-            case InnerClasses:
-                processInnerClasses(dis);
-                break;
+		case SourceFile:
+			processSourceFile(dis);
+			break;
 
-            case Signature:
-                processSignature(dis);
-                break;
+		case Exceptions:
+			processExceptions(dis);
+			break;
 
-            case Synthetic:
-                processSynthetic(dis);
-                break;
+		case EnclosingMethod:
+			processEnclosingMethod(dis);
+			break;
 
-            case ConstantValue:
-                processConstantValue(dis);
-                break;
+		case LocalVariableTable:
+			processLocalVariableTable(dis);
+			break;
 
-            case SourceFile:
-                processSourceFile(dis);
-                break;
+		default:
+			byte[] attributeInfo = new byte[attributeLength];
 
-            case Exceptions:
-                processExceptions(dis);
-                break;
+			dis.read(attributeInfo);
+			break;
 
-            case EnclosingMethod:
-                processEnclosingMethod(dis);
-                break;
+		//		case StackMapTable:
+		//			break;
+		//		case SourceDebugExtension:
+		//			break;
 
-            default:
-                byte[] attributeInfo = new byte[attributeLength];
+		//		case LocalVariableTypeTable:
+		//			break;
+		//		case Deprecated:
+		//			break;
+		//		case RuntimeVisibleAnnotations:
+		//			break;
+		//		case RuntimeInvisibleAnnotations:
+		//			break;
+		//		case RuntimeVisibleParameterAnnotations:
+		//			break;
+		//		case RuntimeInvisibleParameterAnnotations:
+		//			break;
+		//		case AnnotationDefault:
+		//			break;
+		//		case BootstrapMethods:
+		//			break;
+		}
 
-                dis.read(attributeInfo);
-                break;
+	}
 
-            //		case StackMapTable:
-            //			break;
-            //		case SourceDebugExtension:
-            //			break;
-            //		case LocalVariableTable:
-            //			break;
-            //		case LocalVariableTypeTable:
-            //			break;
-            //		case Deprecated:
-            //			break;
-            //		case RuntimeVisibleAnnotations:
-            //			break;
-            //		case RuntimeInvisibleAnnotations:
-            //			break;
-            //		case RuntimeVisibleParameterAnnotations:
-            //			break;
-            //		case RuntimeInvisibleParameterAnnotations:
-            //			break;
-            //		case AnnotationDefault:
-            //			break;
-            //		case BootstrapMethods:
-            //			break;
-        }
+	private void processAttributeCode(DataInputStream dis) throws IOException
+	{
+		int max_stack = dis.readUnsignedShort();
 
-    }
+		debug("processAttributeCode max_stack: " + max_stack);
 
-    private void processAttributeCode(DataInputStream dis) throws IOException {
-        int max_stack = dis.readUnsignedShort();
+		int max_locals = dis.readUnsignedShort();
 
-        debug("processAttributeCode max_stack: " + max_stack);
+		debug("processAttributeCode max_locals: " + max_locals);
 
-        int max_locals = dis.readUnsignedShort();
+		int code_length = dis.readInt();
 
-        debug("processAttributeCode max_locals: " + max_locals);
+		debug("processAttributeCode code_length: " + code_length);
 
-        int code_length = dis.readInt();
+		processCode(code_length);
 
-        debug("processAttributeCode code_length: " + code_length);
+		int exception_table_length = dis.readUnsignedShort();
 
-        processCode(code_length);
+		debug("processAttributeCode exception_table_length: " + exception_table_length);
 
-        int exception_table_length = dis.readUnsignedShort();
+		processCodeExceptionTable(exception_table_length);
 
-        debug("processAttributeCode exception_table_length: " + exception_table_length);
+		int attributes_count = dis.readUnsignedShort();
 
-        processCodeExceptionTable(exception_table_length);
+		debug("processAttributeCode attributes_count: " + attributes_count);
 
-        int attributes_count = dis.readUnsignedShort();
+		processAttributes(attributes_count);
+	}
 
-        debug("processAttributeCode attributes_count: " + attributes_count);
+	private void processCode(int codeLength) throws IOException
+	{
+		currentMethodBCI = 0;
 
-        processAttributes(attributes_count);
-    }
+		while (currentMethodBCI < codeLength)
+		{
+			int opcode = dis.readUnsignedByte();
 
-    private void processCode(int codeLength) throws IOException {
-        currentMethodBCI = 0;
+			Instruction instruction = Instruction.forOpcode(opcode)
+												 .get();
 
-        while (currentMethodBCI < codeLength) {
-            int opcode = dis.readUnsignedByte();
+			info("processCode opcode at BCI [" + currentMethodBCI + "] " + opcode + " (" + instruction + ")");
 
-            Instruction instruction = Instruction.forOpcode(opcode).get();
+			int extraBytes = instruction.getExtraBytes();
 
-            info("processCode opcode at BCI [" + currentMethodBCI + "] " + opcode + " (" + instruction + ")");
+			if (extraBytes > 0)
+			{
 
-            int extraBytes = instruction.getExtraBytes();
+				ListOfInteger operandData = new ListOfInteger();
 
-            if (extraBytes > 0) {
+				BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
 
-                ListOfInteger operandData = new ListOfInteger();
+				classFile.getCurrentMethodInfo()
+						 .addBytecodeLine(bytecodeLine);
 
-                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+				debug("processCode instruction: " + instruction + " has extra bytes " + extraBytes);
 
-                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
+				for (int b = 0; b < extraBytes; b++)
+				{
+					int param = dis.readUnsignedByte();
 
-                debug("processCode instruction: " + instruction + " has extra bytes " + extraBytes);
+					info("processCode extraByte[" + b + "] " + param);
 
-                for (int b = 0; b < extraBytes; b++) {
-                    int param = dis.readUnsignedByte();
+					operandData.add(param);
 
-                    info("processCode extraByte[" + b + "] " + param);
+					currentMethodBCI++;
+				}
+			}
+			else if (extraBytes == -1)
+			{
+				processVariableLengthInstruction(instruction);
+			}
+			else
+			{
+				BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, new NoOperands());
+				classFile.getCurrentMethodInfo()
+						 .addBytecodeLine(bytecodeLine);
+			}
 
-                    operandData.add(param);
+			currentMethodBCI++;
+		}
+	}
 
-                    currentMethodBCI++;
-                }
-            } else if (extraBytes == -1) {
-                processVariableLengthInstruction(instruction);
-            } else {
-                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, new NoOperands());
-                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
-            }
+	private void processVariableLengthInstruction(Instruction instruction) throws IOException
+	{
+		switch (instruction)
+		{
+		case LOOKUPSWITCH:
+		{
+			SwitchTable operandData = new SwitchTable();
+			BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+			classFile.getCurrentMethodInfo()
+					 .addBytecodeLine(bytecodeLine);
+			processLookupSwitch(dis, operandData);
+		}
+		break;
+		case TABLESWITCH:
+		{
+			SwitchTable operandData = new SwitchTable();
+			BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+			classFile.getCurrentMethodInfo()
+					 .addBytecodeLine(bytecodeLine);
+			processTableSwitch(dis, operandData);
+		}
+		break;
+		case WIDE:
+		{
+			ListOfInteger operandData = new ListOfInteger();
+			BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
+			classFile.getCurrentMethodInfo()
+					 .addBytecodeLine(bytecodeLine);
+			processWide(dis, operandData);
+		}
+		break;
+		}
+	}
 
-            currentMethodBCI++;
-        }
-    }
+	private void processWide(DataInputStream dis, ListOfInteger operandData) throws IOException
+	{
+		int nextOpcode = dis.readUnsignedByte();
 
-    private void processVariableLengthInstruction(Instruction instruction) throws IOException {
-        switch (instruction) {
-            case LOOKUPSWITCH: {
-                SwitchTable operandData = new SwitchTable();
-                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
-                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
-                processLookupSwitch(dis, operandData);
-            }
-            break;
-            case TABLESWITCH: {
-                SwitchTable operandData = new SwitchTable();
-                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
-                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
-                processTableSwitch(dis, operandData);
-            }
-            break;
-            case WIDE: {
-                ListOfInteger operandData = new ListOfInteger();
-                BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
-                methodInfoList.get(methodInfoList.size() - 1).addBytecodeLine(bytecodeLine);
-                processWide(dis, operandData);
-            }
-            break;
-        }
-    }
+		operandData.add(nextOpcode);
 
-    private void processWide(DataInputStream dis, ListOfInteger operandData) throws IOException {
-        int nextOpcode = dis.readUnsignedByte();
+		currentMethodBCI++;
 
-        operandData.add(nextOpcode);
+		if (nextOpcode == Instruction.IINC.getOpcode())
+		{
+			int indexByte1 = dis.readUnsignedByte();
+			int indexByte2 = dis.readUnsignedByte();
+			int countByte1 = dis.readUnsignedByte();
+			int countByte2 = dis.readUnsignedByte();
 
-        currentMethodBCI++;
+			operandData.add(indexByte1);
+			operandData.add(indexByte2);
+			operandData.add(countByte1);
+			operandData.add(countByte2);
 
-        if (nextOpcode == Instruction.IINC.getOpcode()) {
-            int indexByte1 = dis.readUnsignedByte();
-            int indexByte2 = dis.readUnsignedByte();
-            int countByte1 = dis.readUnsignedByte();
-            int countByte2 = dis.readUnsignedByte();
+			debug("processWide iinc: " + indexByte1 + ", " + indexByte2 + ", " + countByte1 + ", " + countByte2);
 
-            operandData.add(indexByte1);
-            operandData.add(indexByte2);
-            operandData.add(countByte1);
-            operandData.add(countByte2);
+			currentMethodBCI += 4;
+		}
+		else
+		{
+			int indexByte1 = dis.readUnsignedByte();
+			int indexByte2 = dis.readUnsignedByte();
 
-            debug("processWide iinc: " + indexByte1 + ", " + indexByte2 + ", " + countByte1 + ", " + countByte2);
+			operandData.add(indexByte1);
+			operandData.add(indexByte2);
 
-            currentMethodBCI += 4;
-        } else {
-            int indexByte1 = dis.readUnsignedByte();
-            int indexByte2 = dis.readUnsignedByte();
+			debug("processWide " + nextOpcode + ": " + indexByte1 + ", " + indexByte2);
 
-            operandData.add(indexByte1);
-            operandData.add(indexByte2);
+			currentMethodBCI += 2;
+		}
+	}
 
-            debug("processWide " + nextOpcode + ": " + indexByte1 + ", " + indexByte2);
+	// lookupswitch contains pairs of (key -> BCI)
+	private void processLookupSwitch(DataInputStream dis, SwitchTable operandData) throws IOException
+	{
+		int baseBCI = currentMethodBCI;
 
-            currentMethodBCI += 2;
-        }
-    }
+		int padding = 3 - (currentMethodBCI % 4);
 
-    // lookupswitch contains pairs of (key -> BCI)
-    private void processLookupSwitch(DataInputStream dis, SwitchTable operandData) throws IOException {
-        int baseBCI = currentMethodBCI;
+		debug("processLookupSwitch bci " + currentMethodBCI + " padding " + padding);
 
-        int padding = 3 - (currentMethodBCI % 4);
+		for (int p = 0; p < padding; p++)
+		{
+			int pad = dis.readUnsignedByte();
+			currentMethodBCI++;
+		}
 
-        debug("processLookupSwitch bci " + currentMethodBCI + " padding " + padding);
+		int defaultByte1 = dis.readUnsignedByte();
+		int defaultByte2 = dis.readUnsignedByte();
+		int defaultByte3 = dis.readUnsignedByte();
+		int defaultByte4 = dis.readUnsignedByte();
 
-        for (int p = 0; p < padding; p++) {
-            int pad = dis.readUnsignedByte();
-            currentMethodBCI++;
-        }
+		currentMethodBCI += 4;
 
-        int defaultByte1 = dis.readUnsignedByte();
-        int defaultByte2 = dis.readUnsignedByte();
-        int defaultByte3 = dis.readUnsignedByte();
-        int defaultByte4 = dis.readUnsignedByte();
+		int defaultValue = (defaultByte1 << 24) | (defaultByte2 << 16) | (defaultByte3 << 8) | defaultByte4;
+		defaultValue += baseBCI;
 
-        currentMethodBCI += 4;
+		debug("processLookupSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
+				+ " base: " + baseBCI + " = " + defaultValue);
 
-        int defaultValue = (defaultByte1 << 24) | (defaultByte2 << 16) | (defaultByte3 << 8) | defaultByte4;
-        defaultValue += baseBCI;
+		operandData.put(-1, defaultValue);
 
-        debug("processLookupSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
-                + " base: " + baseBCI + " = " + defaultValue);
+		int npairs1 = dis.readUnsignedByte();
+		int npairs2 = dis.readUnsignedByte();
+		int npairs3 = dis.readUnsignedByte();
+		int npairs4 = dis.readUnsignedByte();
 
-        operandData.put(-1, defaultValue);
+		currentMethodBCI += 4;
 
-        int npairs1 = dis.readUnsignedByte();
-        int npairs2 = dis.readUnsignedByte();
-        int npairs3 = dis.readUnsignedByte();
-        int npairs4 = dis.readUnsignedByte();
+		int npairs = (npairs1 << 24) | (npairs2 << 16) | (npairs3 << 8) | npairs4;
 
-        currentMethodBCI += 4;
+		debug("processLookupSwitch npairs      : " + npairs1 + ", " + npairs2 + ", " + npairs3 + ", " + npairs4 + " = " + npairs);
 
-        int npairs = (npairs1 << 24) | (npairs2 << 16) | (npairs3 << 8) | npairs4;
+		for (int p = 0; p < npairs; p++)
+		{
+			int match = dis.readInt();
 
-        debug("processLookupSwitch npairs      : " + npairs1 + ", " + npairs2 + ", " + npairs3 + ", " + npairs4 + " = " + npairs);
+			currentMethodBCI += 4;
 
-        for (int p = 0; p < npairs; p++) {
-            int match = dis.readInt();
+			int offsetByte1 = dis.readUnsignedByte();
+			int offsetByte2 = dis.readUnsignedByte();
+			int offsetByte3 = dis.readUnsignedByte();
+			int offsetByte4 = dis.readUnsignedByte();
 
-            currentMethodBCI += 4;
+			currentMethodBCI += 4;
 
-            int offsetByte1 = dis.readUnsignedByte();
-            int offsetByte2 = dis.readUnsignedByte();
-            int offsetByte3 = dis.readUnsignedByte();
-            int offsetByte4 = dis.readUnsignedByte();
+			int offset = (offsetByte1 << 24) | (offsetByte2 << 16) | (offsetByte3 << 8) | offsetByte4;
+			offset += baseBCI;
 
-            currentMethodBCI += 4;
+			debug("processLookupSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
+					+ " base: " + baseBCI + " = " + offset);
 
-            int offset = (offsetByte1 << 24) | (offsetByte2 << 16) | (offsetByte3 << 8) | offsetByte4;
-            offset += baseBCI;
+			debug("processLookupSwitch pair[" + p + "] match: " + match + " offset: " + offset);
 
-            debug("processLookupSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
-                    + " base: " + baseBCI + " = " + offset);
+			operandData.put(match, offset);
+		}
+	}
 
-            debug("processLookupSwitch pair[" + p + "] match: " + match + " offset: " + offset);
+	// entries = high - low + default, switch (x) looks up an index in the table
+	private void processTableSwitch(DataInputStream dis, SwitchTable operandData) throws IOException
+	{
+		int baseBCI = currentMethodBCI;
 
+		int padding = 3 - (currentMethodBCI % 4);
 
-            operandData.put(match, offset);
-        }
-    }
+		debug("processTableSwitch bci " + currentMethodBCI + " padding " + padding);
 
-    // entries = high - low + default, switch (x) looks up an index in the table
-    private void processTableSwitch(DataInputStream dis, SwitchTable operandData) throws IOException {
-        int baseBCI = currentMethodBCI;
+		for (int p = 0; p < padding; p++)
+		{
+			int pad = dis.readUnsignedByte();
+			currentMethodBCI++;
+		}
 
-        int padding = 3 - (currentMethodBCI % 4);
+		int defaultByte1 = dis.readUnsignedByte();
+		int defaultByte2 = dis.readUnsignedByte();
+		int defaultByte3 = dis.readUnsignedByte();
+		int defaultByte4 = dis.readUnsignedByte();
 
-        debug("processTableSwitch bci " + currentMethodBCI + " padding " + padding);
+		currentMethodBCI += 4;
 
-        for (int p = 0; p < padding; p++) {
-            int pad = dis.readUnsignedByte();
-            currentMethodBCI++;
-        }
+		int defaultValue = (defaultByte1 << 24) | (defaultByte2 << 16) | (defaultByte3 << 8) | defaultByte4;
+		defaultValue += baseBCI;
 
-        int defaultByte1 = dis.readUnsignedByte();
-        int defaultByte2 = dis.readUnsignedByte();
-        int defaultByte3 = dis.readUnsignedByte();
-        int defaultByte4 = dis.readUnsignedByte();
+		debug("processTableSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
+				+ " base: " + baseBCI + " = " + defaultValue);
 
-        currentMethodBCI += 4;
+		operandData.put(-1, defaultValue);
 
-        int defaultValue = (defaultByte1 << 24) | (defaultByte2 << 16) | (defaultByte3 << 8) | defaultByte4;
-        defaultValue += baseBCI;
+		int lowByte1 = dis.readUnsignedByte();
+		int lowByte2 = dis.readUnsignedByte();
+		int lowByte3 = dis.readUnsignedByte();
+		int lowByte4 = dis.readUnsignedByte();
 
-        debug("processTableSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
-                + " base: " + baseBCI + " = " + defaultValue);
+		currentMethodBCI += 4;
 
-        operandData.put(-1, defaultValue);
+		int low = (lowByte1 << 24) | (lowByte2 << 16) | (lowByte3 << 8) | lowByte4;
 
-        int lowByte1 = dis.readUnsignedByte();
-        int lowByte2 = dis.readUnsignedByte();
-        int lowByte3 = dis.readUnsignedByte();
-        int lowByte4 = dis.readUnsignedByte();
+		debug("processTableSwitch lowBytes    : " + lowByte1 + ", " + lowByte2 + ", " + lowByte3 + ", " + lowByte4 + " = " + low);
 
-        currentMethodBCI += 4;
+		int highByte1 = dis.readUnsignedByte();
+		int highByte2 = dis.readUnsignedByte();
+		int highByte3 = dis.readUnsignedByte();
+		int highByte4 = dis.readUnsignedByte();
 
-        int low = (lowByte1 << 24) | (lowByte2 << 16) | (lowByte3 << 8) | lowByte4;
+		currentMethodBCI += 4;
 
-        debug("processTableSwitch lowBytes    : " + lowByte1 + ", " + lowByte2 + ", " + lowByte3 + ", " + lowByte4 + " = " + low);
+		int high = (highByte1 << 24) | (highByte2 << 16) | (highByte3 << 8) | highByte4;
 
-        int highByte1 = dis.readUnsignedByte();
-        int highByte2 = dis.readUnsignedByte();
-        int highByte3 = dis.readUnsignedByte();
-        int highByte4 = dis.readUnsignedByte();
+		debug("processTableSwitch highBytes   : " + highByte1 + ", " + highByte2 + ", " + highByte3 + ", " + highByte4 + " = "
+				+ high);
 
-        currentMethodBCI += 4;
+		int offsetCount = high - low + 1;
 
-        int high = (highByte1 << 24) | (highByte2 << 16) | (highByte3 << 8) | highByte4;
+		for (int off = 0; off < offsetCount; off++)
+		{
+			int offsetByte1 = dis.readUnsignedByte();
+			int offsetByte2 = dis.readUnsignedByte();
+			int offsetByte3 = dis.readUnsignedByte();
+			int offsetByte4 = dis.readUnsignedByte();
 
-        debug("processTableSwitch highBytes   : " + highByte1 + ", " + highByte2 + ", " + highByte3 + ", " + highByte4 + " = "
-                + high);
+			currentMethodBCI += 4;
 
-        int offsetCount = high - low + 1;
+			int offset = (offsetByte1 << 24) | (offsetByte2 << 16) | (offsetByte3 << 8) | offsetByte4;
+			offset += baseBCI;
 
-        for (int off = 0; off < offsetCount; off++) {
-            int offsetByte1 = dis.readUnsignedByte();
-            int offsetByte2 = dis.readUnsignedByte();
-            int offsetByte3 = dis.readUnsignedByte();
-            int offsetByte4 = dis.readUnsignedByte();
+			debug("processTableSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
+					+ " base:" + baseBCI + " = " + offset);
 
-            currentMethodBCI += 4;
+			operandData.put(low + off, offset);
+		}
+	}
 
-            int offset = (offsetByte1 << 24) | (offsetByte2 << 16) | (offsetByte3 << 8) | offsetByte4;
-            offset += baseBCI;
+	private void foo()
+	{
+		try
+		{
+			Thread.sleep(1000);
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+	}
 
-            debug("processTableSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
-                    + " base:" + baseBCI + " = " + offset);
+	private void processCodeExceptionTable(int exceptionTableLength) throws IOException
+	{
+		for (int i = 0; i < exceptionTableLength; i++)
+		{
+			int start_pc = dis.readUnsignedShort();
 
+			debug("processCodeExceptionTable[" + i + "] start_pc: " + start_pc);
 
-            operandData.put(low + off, offset);
-        }
-    }
+			int end_pc = dis.readUnsignedShort();
 
-    private void foo() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+			debug("processCodeExceptionTable[" + i + "] end_pc: " + end_pc);
 
-    private void processCodeExceptionTable(int exceptionTableLength) throws IOException {
-        for (int i = 0; i < exceptionTableLength; i++) {
-            int start_pc = dis.readUnsignedShort();
+			int handler_pc = dis.readUnsignedShort();
 
-            debug("processCodeExceptionTable[" + i + "] start_pc: " + start_pc);
+			debug("processCodeExceptionTable[" + i + "] handler_pc: " + handler_pc);
 
-            int end_pc = dis.readUnsignedShort();
+			int catch_type = dis.readUnsignedShort();
 
-            debug("processCodeExceptionTable[" + i + "] end_pc: " + end_pc);
+			debug("processCodeExceptionTable[" + i + "] catch_type: " + catch_type);
 
-            int handler_pc = dis.readUnsignedShort();
+			//TODO finish this
+		}
+	}
 
-            debug("processCodeExceptionTable[" + i + "] handler_pc: " + handler_pc);
+	private void processAttributeLineNumberTable(DataInputStream dis) throws IOException
+	{
+		int line_number_table_length = dis.readUnsignedShort();
 
-            int catch_type = dis.readUnsignedShort();
+		debug("processAttributeLineNumberTable line_number_table_length: " + line_number_table_length);
 
-            debug("processCodeExceptionTable[" + i + "] catch_type: " + catch_type);
+		IntegerIntegerMap lineNumberTable = new IntegerIntegerMap();
 
-            //TODO finish this
-        }
-    }
+		for (int l = 0; l < line_number_table_length; l++)
+		{
+			int start_pc = dis.readUnsignedShort();
+			int line_number = dis.readUnsignedShort();
 
-    private void processAttributeLineNumberTable(DataInputStream dis) throws IOException {
-        int line_number_table_length = dis.readUnsignedShort();
+			lineNumberTable.put(start_pc, line_number);
 
-        debug("processAttributeLineNumberTable line_number_table_length: " + line_number_table_length);
+			debug("processAttributeLineNumberTable mapping: " + start_pc + "->" + line_number);
+		}
 
-        IntegerIntegerMap lineNumberTable = new IntegerIntegerMap();
+		classFile.getCurrentMethodInfo()
+				 .setAttribute(Attribute.LineNumberTable, lineNumberTable);
+	}
 
-        for (int l = 0; l < line_number_table_length; l++) {
+	private void processLocalVariableTable(DataInputStream dis) throws IOException
+	{
+		int local_variable_table_length = dis.readUnsignedShort();
 
-            int start_pc = dis.readUnsignedShort();
-            int line_number = dis.readUnsignedShort();
+		debug("processLocalVariableTable local_variable_table_length: " + local_variable_table_length);
 
-            lineNumberTable.put(start_pc, line_number);
+		LocalVariableTable localVariableTable = new LocalVariableTable(local_variable_table_length);
 
-            debug("processAttributeLineNumberTable mapping: " + start_pc + "->" + line_number);
-        }
+		for (int l = 0; l < local_variable_table_length; l++)
+		{
+			int start_pc = dis.readUnsignedShort();
+			int length = dis.readUnsignedShort();
+			int nameIndex = dis.readUnsignedShort();
+			int descriptorIndex = dis.readUnsignedShort();
+			int index = dis.readUnsignedShort();
 
-        methodInfoList.get(methodInfoList.size() - 1).setAttribute(Attribute.LineNumberTable, lineNumberTable);
-    }
+			localVariableTable.setEntry(l, new LocalVariableTableEntry(start_pc, length, nameIndex, descriptorIndex, index));
+		}
 
-    private void processExceptions(DataInputStream dis) throws IOException {
+		classFile.getCurrentMethodInfo()
+				 .setAttribute(Attribute.LocalVariableTable, localVariableTable);
 
-        int number_of_exceptions = dis.readUnsignedShort();
+	}
 
-        debug("processExceptions number_of_exceptions: " + number_of_exceptions);
+	private void processExceptions(DataInputStream dis) throws IOException
+	{
+		int number_of_exceptions = dis.readUnsignedShort();
 
-        for (int ex = 0; ex < number_of_exceptions; ex++) {
+		debug("processExceptions number_of_exceptions: " + number_of_exceptions);
 
-            int exception_index = dis.readUnsignedShort();
+		Exceptions exceptions = new Exceptions(number_of_exceptions);
 
-            debug("exception_index[" + ex + "]:" + exception_index);
-        }
+		for (int ex = 0; ex < number_of_exceptions; ex++)
+		{
 
-        // TODO finish this
-    }
+			int exception_index = dis.readUnsignedShort();
 
-    private class Inner1 {
-        public String pubString;
-    }
+			debug("exception_index[" + ex + "]:" + exception_index);
 
-    public <Q extends Object> List<Q> fooGenerics() throws RuntimeException, NumberFormatException {
-        return new ArrayList<>();
-    }
+			exceptions.set(ex, exception_index);
+		}
 
-    private static class StaticInner1 {
-        public int bar;
-    }
+		classFile.getCurrentMethodInfo()
+				 .setAttribute(Attribute.Exceptions, exceptions);
+	}
 
-    private void processInnerClasses(DataInputStream dis) throws IOException {
+	private class Inner1
+	{
+		public String pubString;
+	}
 
-        int number_of_classes = dis.readUnsignedShort();
+	public <Q extends Object> List<Q> fooGenerics() throws RuntimeException, NumberFormatException
+	{
+		return new ArrayList<>();
+	}
 
-        debug("processInnerClasses number_of_classes: " + number_of_classes);
+	private static class StaticInner1
+	{
+		public int bar;
+	}
 
-        for (int inner = 0; inner < number_of_classes; inner++) {
-            int inner_class_info_index = dis.readUnsignedShort();
-            int outer_class_info_index = dis.readUnsignedShort();
-            int inner_name_index = dis.readUnsignedShort();
-            int inner_class_access_flags = dis.readUnsignedShort();
+	private void processInnerClasses(DataInputStream dis) throws IOException
+	{
+		int number_of_classes = dis.readUnsignedShort();
 
-            debug("processInnerClasses inner_class_info_index  : " + inner_class_info_index);
-            debug("processInnerClasses outer_class_info_index  : " + outer_class_info_index);
-            debug("processInnerClasses inner_name_index        : " + inner_name_index);
-            debug("processInnerClasses inner_class_access_flags: " + inner_class_access_flags);
+		debug("processInnerClasses number_of_classes: " + number_of_classes);
 
-            // TODO finish this
-        }
-    }
+		for (int inner = 0; inner < number_of_classes; inner++)
+		{
+			int inner_class_info_index = dis.readUnsignedShort();
+			int outer_class_info_index = dis.readUnsignedShort();
+			int inner_name_index = dis.readUnsignedShort();
+			int inner_class_access_flags = dis.readUnsignedShort();
 
-    private void processSignature(DataInputStream dis) throws IOException {
-        int signature_index = dis.readUnsignedShort();
+			debug("processInnerClasses inner_class_info_index  : " + inner_class_info_index);
+			debug("processInnerClasses outer_class_info_index  : " + outer_class_info_index);
+			debug("processInnerClasses inner_name_index        : " + inner_name_index);
+			debug("processInnerClasses inner_class_access_flags: " + inner_class_access_flags);
 
-        debug("processSignature signature_index: " + signature_index);
+			// TODO finish this
+		}
+	}
 
-        // TODO finish this
-    }
+	private void processSignature(DataInputStream dis) throws IOException
+	{
+		int signature_index = dis.readUnsignedShort();
 
-    private void processSynthetic(DataInputStream dis) throws IOException {
-        debug("current item is synthetic");
+		debug("processSignature signature_index: " + signature_index);
 
-        // TODO finish this
-    }
+		Signature signature = new Signature(signature_index);
 
-    private static final String fooConstantValueString = "constantfoo";
-    private static final double fooConstantValueDouble = 123.456;
+		classFile.getCurrentMethodInfo()
+				 .setAttribute(Attribute.Signature, signature);
+	}
 
-    private void processConstantValue(DataInputStream dis) throws IOException {
-        int constantvalue_index = dis.readUnsignedShort();
+	private void processSynthetic(DataInputStream dis) throws IOException
+	{
+		debug("current item is synthetic");
 
-        debug("processConstantValue constantvalue_index: " + constantvalue_index);
+		// TODO finish this
+	}
 
-        // TODO finish this
-    }
+	private static final String fooConstantValueString = "constantfoo";
+	private static final double fooConstantValueDouble = 0.125d;
+	private static final float fooConstantValueFloat = 0.456f;
+	private static final int fooConstantValueInt = 10;
+	private static final long fooConstantValueLong = 100L;
 
-    private void processSourceFile(DataInputStream dis) throws IOException {
-        int sourcefile_index = dis.readUnsignedShort();
+	private double getPrimitiveDouble()
+	{
+		return fooConstantValueDouble;
+	}
 
-        debug("processSourceFile sourcefile_index: " + sourcefile_index);
+	private float getPrimitiveFloat()
+	{
+		return fooConstantValueFloat;
+	}
 
-        // TODO finish this
-    }
+	private int getPrimitiveInt()
+	{
+		return fooConstantValueInt;
+	}
 
-    private void encloser() {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                debug("running!");
-            }
-        };
-    }
+	private long getPrimitiveLong()
+	{
+		return fooConstantValueLong;
+	}
 
-    private void processEnclosingMethod(DataInputStream dis) throws IOException {
-        int class_index = dis.readUnsignedShort();
-        int method_index = dis.readUnsignedShort();
-        debug("processEnclosingMethod class_index: " + class_index + " method_index:" + method_index);
+	private void processConstantValue(DataInputStream dis) throws IOException
+	{
+		int constantvalue_index = dis.readUnsignedShort();
 
-        // TODO finish this
-    }
+		debug("processConstantValue constantvalue_index: " + constantvalue_index);
+
+		// TODO finish this
+	}
+
+	private void processSourceFile(DataInputStream dis) throws IOException
+	{
+		int sourcefile_index = dis.readUnsignedShort();
+
+		debug("processSourceFile sourcefile_index: " + sourcefile_index);
+
+		// TODO finish this
+	}
+
+	private void encloser()
+	{
+		Runnable r = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				debug("running!");
+			}
+		};
+	}
+
+	private void processEnclosingMethod(DataInputStream dis) throws IOException
+	{
+		int class_index = dis.readUnsignedShort();
+		int method_index = dis.readUnsignedShort();
+		debug("processEnclosingMethod class_index: " + class_index + " method_index:" + method_index);
+
+		// TODO finish this
+	}
 }
