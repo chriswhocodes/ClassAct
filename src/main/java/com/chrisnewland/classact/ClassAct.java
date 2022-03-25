@@ -1,5 +1,6 @@
 package com.chrisnewland.classact;
 
+import com.chrisnewland.classact.model.ClassFile;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolTag;
@@ -13,12 +14,7 @@ import java.util.List;
 
 // https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-6.html#jvms-6.5
 
-public class ClassAct implements Serializable {
-
-//    private String[] tableUTF8;
-//    private EntryClass[] array_Entry_Classes;
-//    private EntryMethodRef[] array_CR_MethodRef;
-//    private EntryNameAndType[] array_Entry_NameAndType;
+public class ClassAct {
 
     private List<MethodInfo> methodInfoList = new ArrayList<>();
 
@@ -29,6 +25,8 @@ public class ClassAct implements Serializable {
     private int currentMethodBCI = 0;
 
     private ConstantPool constantPool;
+
+    private ClassFile classFile;
 
     public static void main(String[] args) throws Exception {
         File classFile = new File(args[0]);
@@ -48,8 +46,11 @@ public class ClassAct implements Serializable {
         }
     }
 
-    public ClassAct(File classFile) throws Exception {
-        dis = new DataInputStream(new BufferedInputStream(new FileInputStream(classFile)));
+    public ClassAct(File classFileName) throws Exception {
+
+        classFile = new ClassFile();
+
+        dis = new DataInputStream(new BufferedInputStream(new FileInputStream(classFileName)));
 
         int magic = dis.readInt();
 
@@ -66,11 +67,6 @@ public class ClassAct implements Serializable {
         debug("constantPoolCount: " + constantPoolCount);
 
         constantPool = new ConstantPool(constantPoolCount);
-
-//        tableUTF8 = new String[constantPoolCount];
-//        array_Entry_Classes = new EntryClass[constantPoolCount];
-//        array_CR_MethodRef = new EntryMethodRef[constantPoolCount];
-//        array_Entry_NameAndType = new EntryNameAndType[constantPoolCount];
 
         processConstantPool(constantPoolCount);
 
@@ -113,6 +109,11 @@ public class ClassAct implements Serializable {
         dumpMethods();
     }
 
+    public ClassFile getClassFile()
+    {
+        return classFile;
+    }
+
     private void debug(String message) {
         System.out.println(message);
     }
@@ -135,17 +136,15 @@ public class ClassAct implements Serializable {
 
                 String className = constantPool.toString(entryClass.getNameIndex());
 
-                EntryNameAndType entry_nameAndType = (EntryNameAndType) constantPool.get(entryMethodRef.getNameAndTypeIndex());
+                EntryNameAndType entryNameAndType = (EntryNameAndType) constantPool.get(entryMethodRef.getNameAndTypeIndex());
 
-                String methodName = constantPool.toString(entry_nameAndType.getNameIndex());
+                String methodName = constantPool.toString(entryNameAndType.getNameIndex());
 
-                String descriptor = constantPool.toString(entry_nameAndType.getDescriptorIndex());
+                String descriptor = constantPool.toString(entryNameAndType.getDescriptorIndex());
 
                 info("Class:" + className + " method:" + methodName + " descriptor:" + descriptor);
             }
         }
-
-        report();
 
         for (MethodInfo methodInfo : methodInfoList) {
             info(constantPool.get(methodInfo.getNameIndex()).toString(constantPool) + " " + constantPool.get(methodInfo.getDescriptorIndex()).toString(constantPool));
@@ -156,7 +155,7 @@ public class ClassAct implements Serializable {
 
             for (BytecodeLine line : bytecodeLines) {
                 Instruction instruction = line.getInstruction();
-                info(line.getBci() + " : " + instruction + " " + line.getOperandData().toString(instruction, constantPool));
+                info(line.getBci() + " : " + instruction + " " + line.getOperandData().toString(line, constantPool));
             }
 
             IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
@@ -168,27 +167,6 @@ public class ClassAct implements Serializable {
         }
     }
 
-    private void report() {
-//        System.out.println("array_CR_Class      : " + reportArray(array_Entry_Classes));
-//        System.out.println("array_CR_Method     : " + reportArray(array_CR_MethodRef));
-//        System.out.println("array_CR_NameAndType: " + reportArray(array_Entry_NameAndType));
-//        System.out.println("tableUTF8           : " + reportArray(tableUTF8));
-    }
-
-    private String reportArray(Object[] array) {
-        int count = 0;
-
-        int length = array.length;
-
-        for (int i = 0; i < length; i++) {
-            if (array[i] != null) {
-                count++;
-            }
-        }
-
-        return count + "/" + length;
-    }
-
     private void processConstantPool(int constantPoolCount) throws IOException {
         for (int i = 0; i < constantPoolCount - 1; i++) {
             int tagByte = dis.readUnsignedByte();
@@ -198,8 +176,6 @@ public class ClassAct implements Serializable {
             ConstantPoolTag tag = ConstantPoolTag.valueOf(tagByte).get();
 
             debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
-
-            // TODO build data structure for CP
 
             switch (tag) {
                 case CONSTANT_Class:
@@ -827,6 +803,8 @@ public class ClassAct implements Serializable {
             int catch_type = dis.readUnsignedShort();
 
             debug("processCodeExceptionTable[" + i + "] catch_type: " + catch_type);
+
+            //TODO finish this
         }
     }
 
@@ -862,6 +840,8 @@ public class ClassAct implements Serializable {
 
             debug("exception_index[" + ex + "]:" + exception_index);
         }
+
+        // TODO finish this
     }
 
     private class Inner1 {
@@ -892,6 +872,8 @@ public class ClassAct implements Serializable {
             debug("processInnerClasses outer_class_info_index  : " + outer_class_info_index);
             debug("processInnerClasses inner_name_index        : " + inner_name_index);
             debug("processInnerClasses inner_class_access_flags: " + inner_class_access_flags);
+
+            // TODO finish this
         }
     }
 
@@ -899,10 +881,14 @@ public class ClassAct implements Serializable {
         int signature_index = dis.readUnsignedShort();
 
         debug("processSignature signature_index: " + signature_index);
+
+        // TODO finish this
     }
 
     private void processSynthetic(DataInputStream dis) throws IOException {
         debug("current item is synthetic");
+
+        // TODO finish this
     }
 
     private static final String fooConstantValueString = "constantfoo";
@@ -912,12 +898,16 @@ public class ClassAct implements Serializable {
         int constantvalue_index = dis.readUnsignedShort();
 
         debug("processConstantValue constantvalue_index: " + constantvalue_index);
+
+        // TODO finish this
     }
 
     private void processSourceFile(DataInputStream dis) throws IOException {
         int sourcefile_index = dis.readUnsignedShort();
 
         debug("processSourceFile sourcefile_index: " + sourcefile_index);
+
+        // TODO finish this
     }
 
     private void encloser() {
@@ -933,5 +923,7 @@ public class ClassAct implements Serializable {
         int class_index = dis.readUnsignedShort();
         int method_index = dis.readUnsignedShort();
         debug("processEnclosingMethod class_index: " + class_index + " method_index:" + method_index);
+
+        // TODO finish this
     }
 }

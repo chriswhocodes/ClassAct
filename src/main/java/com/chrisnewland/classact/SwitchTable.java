@@ -6,7 +6,7 @@ import java.util.Map;
 
 public class SwitchTable extends IntegerIntegerMap implements OperandData {
     @Override
-    public String toString(Instruction instruction, ConstantPool constantPool) {
+    public String toString(BytecodeLine bytecodeLine, ConstantPool constantPool) {
         StringBuilder builder = new StringBuilder();
 
         int defaultBCI = -1;

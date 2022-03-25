@@ -1,19 +1,17 @@
 package com.chrisnewland.classact;
 
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
-import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
-import com.chrisnewland.classact.model.constantpool.entry.EntryMethodRef;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ListOfInteger extends ArrayList<Integer> implements OperandData {
     @Override
-    public String toString(Instruction instruction, ConstantPool constantPool) {
+    public String toString(BytecodeLine bytecodeLine, ConstantPool constantPool) {
 
         StringBuilder builder = new StringBuilder();
 
-        String decodeExtraBytes = instruction.getDecodeExtraBytes();
+        String decodeExtraBytes = bytecodeLine.getInstruction().getDecodeExtraBytes();
 
         int byteIndex = 0;
 
@@ -65,22 +63,32 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData {
                     byteIndex += 2;
                 }
                 break;
-                case 'i': // BCI (2 bytes)
+                case 'i': // BCI (2 bytes signed offset from instruction BCI)
                 {
+                    int bci = bytecodeLine.getBci();
+
                     int signedByte1 = get(byteIndex);
                     int signedByte2 = get(byteIndex + 1);
-                    int index = (signedByte1 << 8) + signedByte2;
+                    int index = (signedByte1 << 8) | signedByte2;
+
+                    index = (bci + (short)index);
+
                     builder.append("bci ").append(index);
                     byteIndex += 2;
                 }
                 break;
-                case 'I': // BCI (4 bytes)
+                case 'I': // BCI (4 bytes signed offset from instruction BCI)
                 {
+                    int bci = bytecodeLine.getBci();
+
                     int signedByte1 = get(byteIndex);
                     int signedByte2 = get(byteIndex + 1);
                     int signedByte3 = get(byteIndex + 2);
                     int signedByte4 = get(byteIndex + 3);
                     int index = (signedByte1 << 24) + (signedByte2 << 16) + (signedByte3 << 8) + signedByte4;
+
+                    index = (bci + (short)index);
+
                     builder.append("bci ").append(index);
                     byteIndex += 4;
                 }
