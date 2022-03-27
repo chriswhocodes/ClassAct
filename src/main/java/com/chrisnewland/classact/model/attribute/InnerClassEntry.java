@@ -36,9 +36,4 @@ public class InnerClassEntry
 	{
 		return innerClassAccessFlags;
 	}
-
-	public String toString(ConstantPool constantPool)
-	{
-		return null;
-	}
 }

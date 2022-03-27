@@ -1,7 +1,6 @@
 package com.chrisnewland.classact.model;
 
-import com.chrisnewland.classact.model.Attribute;
-import com.chrisnewland.classact.model.BytecodeLine;
+import com.chrisnewland.classact.model.attribute.Attributes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,12 +9,10 @@ import java.util.Map;
 
 public class MethodInfo
 {
-
 	private int accessFlags;
 	private int nameIndex;
 	private int descriptorIndex;
-
-	private Map<Attribute, Object> attributeMap = new HashMap<>();
+	private Attributes attributes;
 
 	private List<BytecodeLine> bytecodeLines = new ArrayList<>();
 
@@ -41,16 +38,6 @@ public class MethodInfo
 		return descriptorIndex;
 	}
 
-	public void setAttribute(Attribute attribute, Object object)
-	{
-		attributeMap.put(attribute, object);
-	}
-
-	public Object getAttribute(Attribute attribute)
-	{
-		return attributeMap.get(attribute);
-	}
-
 	public void addBytecodeLine(BytecodeLine bytecodeLine)
 	{
 		bytecodeLines.add(bytecodeLine);
@@ -59,5 +46,15 @@ public class MethodInfo
 	public List<BytecodeLine> getBytecodeLines()
 	{
 		return bytecodeLines;
+	}
+
+	public Attributes getAttributes()
+	{
+		return attributes;
+	}
+
+	public void setAttributes(Attributes attributes)
+	{
+		this.attributes = attributes;
 	}
 }

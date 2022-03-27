@@ -1,8 +1,6 @@
 package com.chrisnewland.classact.model;
 
-import com.chrisnewland.classact.model.attribute.Exceptions;
-import com.chrisnewland.classact.model.attribute.LocalVariableTable;
-import com.chrisnewland.classact.model.attribute.Signature;
+import com.chrisnewland.classact.model.attribute.*;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
 import com.chrisnewland.classact.model.constantpool.entry.EntryClass;
@@ -21,6 +19,8 @@ public class ClassFile
 	private int accessFlags;
 	private int thisClass;
 	private int superClass;
+
+	private Attributes attributes;
 
 	private List<MethodInfo> methodInfoList = new ArrayList<>();
 
@@ -104,6 +104,16 @@ public class ClassFile
 		this.superClass = superClass;
 	}
 
+	public Attributes getAttributes()
+	{
+		return attributes;
+	}
+
+	public void setAttributes(Attributes attributes)
+	{
+		this.attributes = attributes;
+	}
+
 	public void dumpMethods()
 	{
 		System.out.println("dumpMethods");
@@ -148,37 +158,7 @@ public class ClassFile
 																				   .toString(line, constantPool));
 			}
 
-			IntegerIntegerMap lineNumberTable = (IntegerIntegerMap) methodInfo.getAttribute(Attribute.LineNumberTable);
-
-			if (lineNumberTable != null)
-			{
-				System.out.println("LineNumberTable:");
-				System.out.println(lineNumberTable.toString());
-			}
-
-			LocalVariableTable localVariableTable = (LocalVariableTable) methodInfo.getAttribute(Attribute.LocalVariableTable);
-
-			if (localVariableTable != null)
-			{
-				System.out.println("localVariableTable:");
-				System.out.println(localVariableTable.toString(constantPool));
-			}
-
-			Exceptions exceptions = (Exceptions) methodInfo.getAttribute(Attribute.Exceptions);
-
-			if (exceptions != null)
-			{
-				System.out.println("Exceptions:");
-				System.out.println(exceptions.toString(constantPool));
-			}
-
-			Signature signature = (Signature) methodInfo.getAttribute(Attribute.Signature);
-
-			if (signature != null)
-			{
-				System.out.println("Signature:");
-				System.out.println(signature.toString(constantPool));
-			}
+			System.out.println(methodInfo.getAttributes().toString(constantPool));
 		}
 	}
 }

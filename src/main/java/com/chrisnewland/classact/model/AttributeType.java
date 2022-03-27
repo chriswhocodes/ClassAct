@@ -1,6 +1,6 @@
 package com.chrisnewland.classact.model;
 
-public enum Attribute
+public enum AttributeType
 {
 	ConstantValue,
 	Code,

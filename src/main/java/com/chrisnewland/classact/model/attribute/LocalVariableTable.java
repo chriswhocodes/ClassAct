@@ -1,9 +1,16 @@
 package com.chrisnewland.classact.model.attribute;
 
+import com.chrisnewland.classact.model.AttributeType;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
-public class LocalVariableTable
+public class LocalVariableTable implements Attribute
 {
+	@Override
+	public AttributeType getType()
+	{
+		return AttributeType.LocalVariableTable;
+	}
+
 	private LocalVariableTableEntry[] entries;
 
 	public LocalVariableTable(int count)

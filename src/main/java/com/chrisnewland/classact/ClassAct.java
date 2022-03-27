@@ -1,10 +1,7 @@
 package com.chrisnewland.classact;
 
 import com.chrisnewland.classact.model.*;
-import com.chrisnewland.classact.model.attribute.Exceptions;
-import com.chrisnewland.classact.model.attribute.LocalVariableTable;
-import com.chrisnewland.classact.model.attribute.LocalVariableTableEntry;
-import com.chrisnewland.classact.model.attribute.Signature;
+import com.chrisnewland.classact.model.attribute.*;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolTag;
 import com.chrisnewland.classact.model.constantpool.entry.*;
@@ -99,9 +96,12 @@ public class ClassAct
 
 		debug("attributesCount: " + attributesCount);
 
-		processAttributes(attributesCount);
+		classFile.setAttributes(processAttributes(attributesCount));
 
 		classFile.dumpMethods();
+
+		System.out.println(classFile.getAttributes().toString(classFile.getConstantPool()));
+
 	}
 
 	public ClassFile getClassFile()
@@ -423,12 +423,16 @@ public class ClassAct
 			classFile.getMethodInfoList()
 					 .add(methodInfo);
 
-			processAttributes(attributesCount);
+			Attributes attributes = processAttributes(attributesCount);
+
+			methodInfo.setAttributes(attributes);
 		}
 	}
 
-	private void processAttributes(int attributesCount) throws IOException
+	private Attributes processAttributes(int attributesCount) throws IOException
 	{
+		Attributes attributes = new Attributes(attributesCount);
+
 		for (int i = 0; i < attributesCount; i++)
 		{
 			int attributeNameIndex = dis.readUnsignedShort();
@@ -444,64 +448,53 @@ public class ClassAct
 
 			debug("processAttributes attributeName: " + attributeName);
 
-			processSingleAttribute(attributeName, attributeLength);
+			attributes.set(i, processSingleAttribute(attributeName, attributeLength));
 		}
+
+		return attributes;
 	}
 
-	private void processSingleAttribute(String attributeName, int attributeLength) throws IOException
+	private Attribute processSingleAttribute(String attributeName, int attributeLength) throws IOException
 	{
 		debug("processSingleAttribute " + attributeName + " attributeLength " + attributeLength);
 
-		Attribute attribute = Attribute.valueOf(attributeName);
+		AttributeType attributeType = AttributeType.valueOf(attributeName);
 
-		switch (attribute)
+		switch (attributeType)
 		{
-
 		case Code:
-			processAttributeCode(dis);
-			break;
-
+			return processAttributeCode(dis);
 		case LineNumberTable:
-			processAttributeLineNumberTable(dis);
-			break;
+			return processAttributeLineNumberTable(dis);
 
 		case InnerClasses:
-			processInnerClasses(dis);
-			break;
+			return processInnerClasses(dis);
 
 		case Signature:
-			processSignature(dis);
-			break;
+			return processSignature(dis);
 
 		case Synthetic:
-			processSynthetic(dis);
-			break;
+			return processSynthetic(dis);
 
 		case ConstantValue:
-			processConstantValue(dis);
-			break;
+			return processConstantValue(dis);
 
 		case SourceFile:
-			processSourceFile(dis);
-			break;
+			return processSourceFile(dis);
 
 		case Exceptions:
-			processExceptions(dis);
-			break;
+			return processExceptions(dis);
 
 		case EnclosingMethod:
-			processEnclosingMethod(dis);
-			break;
+			return processEnclosingMethod(dis);
 
 		case LocalVariableTable:
-			processLocalVariableTable(dis);
-			break;
+			return processLocalVariableTable(dis);
 
 		default:
 			byte[] attributeInfo = new byte[attributeLength];
-
 			dis.read(attributeInfo);
-			break;
+			return null;
 
 		//		case StackMapTable:
 		//			break;
@@ -525,16 +518,21 @@ public class ClassAct
 		//		case BootstrapMethods:
 		//			break;
 		}
-
 	}
 
-	private void processAttributeCode(DataInputStream dis) throws IOException
+	private Code processAttributeCode(DataInputStream dis) throws IOException
 	{
+		Code code = new Code();
+
 		int max_stack = dis.readUnsignedShort();
+
+		code.setMaxStack(max_stack);
 
 		debug("processAttributeCode max_stack: " + max_stack);
 
 		int max_locals = dis.readUnsignedShort();
+
+		code.setMaxLocals(max_locals);
 
 		debug("processAttributeCode max_locals: " + max_locals);
 
@@ -548,13 +546,17 @@ public class ClassAct
 
 		debug("processAttributeCode exception_table_length: " + exception_table_length);
 
-		processCodeExceptionTable(exception_table_length);
+		ExceptionTable exceptionTable = processCodeExceptionTable(exception_table_length);
+
+		code.setExceptionTable(exceptionTable);
 
 		int attributes_count = dis.readUnsignedShort();
 
 		debug("processAttributeCode attributes_count: " + attributes_count);
 
-		processAttributes(attributes_count);
+		code.setAttributes(processAttributes(attributes_count));
+
+		return code;
 	}
 
 	private void processCode(int codeLength) throws IOException
@@ -574,7 +576,6 @@ public class ClassAct
 
 			if (extraBytes > 0)
 			{
-
 				ListOfInteger operandData = new ListOfInteger();
 
 				BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
@@ -834,8 +835,10 @@ public class ClassAct
 		}
 	}
 
-	private void processCodeExceptionTable(int exceptionTableLength) throws IOException
+	private ExceptionTable processCodeExceptionTable(int exceptionTableLength) throws IOException
 	{
+		ExceptionTable exceptionTable = new ExceptionTable(exceptionTableLength);
+
 		for (int i = 0; i < exceptionTableLength; i++)
 		{
 			int start_pc = dis.readUnsignedShort();
@@ -854,17 +857,19 @@ public class ClassAct
 
 			debug("processCodeExceptionTable[" + i + "] catch_type: " + catch_type);
 
-			//TODO finish this
+			exceptionTable.set(i, new ExceptionTableEntry(start_pc, end_pc, handler_pc, catch_type));
 		}
+
+		return exceptionTable;
 	}
 
-	private void processAttributeLineNumberTable(DataInputStream dis) throws IOException
+	private LineNumberTable processAttributeLineNumberTable(DataInputStream dis) throws IOException
 	{
 		int line_number_table_length = dis.readUnsignedShort();
 
 		debug("processAttributeLineNumberTable line_number_table_length: " + line_number_table_length);
 
-		IntegerIntegerMap lineNumberTable = new IntegerIntegerMap();
+		LineNumberTable lineNumberTable = new LineNumberTable();
 
 		for (int l = 0; l < line_number_table_length; l++)
 		{
@@ -876,11 +881,10 @@ public class ClassAct
 			debug("processAttributeLineNumberTable mapping: " + start_pc + "->" + line_number);
 		}
 
-		classFile.getCurrentMethodInfo()
-				 .setAttribute(Attribute.LineNumberTable, lineNumberTable);
+		return lineNumberTable;
 	}
 
-	private void processLocalVariableTable(DataInputStream dis) throws IOException
+	private LocalVariableTable processLocalVariableTable(DataInputStream dis) throws IOException
 	{
 		int local_variable_table_length = dis.readUnsignedShort();
 
@@ -899,12 +903,11 @@ public class ClassAct
 			localVariableTable.setEntry(l, new LocalVariableTableEntry(start_pc, length, nameIndex, descriptorIndex, index));
 		}
 
-		classFile.getCurrentMethodInfo()
-				 .setAttribute(Attribute.LocalVariableTable, localVariableTable);
+		return localVariableTable;
 
 	}
 
-	private void processExceptions(DataInputStream dis) throws IOException
+	private Exceptions processExceptions(DataInputStream dis) throws IOException
 	{
 		int number_of_exceptions = dis.readUnsignedShort();
 
@@ -922,8 +925,7 @@ public class ClassAct
 			exceptions.set(ex, exception_index);
 		}
 
-		classFile.getCurrentMethodInfo()
-				 .setAttribute(Attribute.Exceptions, exceptions);
+		return exceptions;
 	}
 
 	private class Inner1
@@ -941,11 +943,13 @@ public class ClassAct
 		public int bar;
 	}
 
-	private void processInnerClasses(DataInputStream dis) throws IOException
+	private InnerClasses processInnerClasses(DataInputStream dis) throws IOException
 	{
 		int number_of_classes = dis.readUnsignedShort();
 
 		debug("processInnerClasses number_of_classes: " + number_of_classes);
+
+		InnerClasses innerClasses = new InnerClasses(number_of_classes);
 
 		for (int inner = 0; inner < number_of_classes; inner++)
 		{
@@ -959,27 +963,27 @@ public class ClassAct
 			debug("processInnerClasses inner_name_index        : " + inner_name_index);
 			debug("processInnerClasses inner_class_access_flags: " + inner_class_access_flags);
 
-			// TODO finish this
+			innerClasses.set(inner, new InnerClassEntry(inner_class_info_index, outer_class_info_index, inner_name_index,
+					inner_class_access_flags));
 		}
+
+		return innerClasses;
 	}
 
-	private void processSignature(DataInputStream dis) throws IOException
+	private Signature processSignature(DataInputStream dis) throws IOException
 	{
 		int signature_index = dis.readUnsignedShort();
 
 		debug("processSignature signature_index: " + signature_index);
 
-		Signature signature = new Signature(signature_index);
-
-		classFile.getCurrentMethodInfo()
-				 .setAttribute(Attribute.Signature, signature);
+		return new Signature(signature_index);
 	}
 
-	private void processSynthetic(DataInputStream dis) throws IOException
+	private Synthetic processSynthetic(DataInputStream dis) throws IOException
 	{
 		debug("current item is synthetic");
 
-		// TODO finish this
+		return new Synthetic();
 	}
 
 	private static final String fooConstantValueString = "constantfoo";
@@ -1008,22 +1012,22 @@ public class ClassAct
 		return fooConstantValueLong;
 	}
 
-	private void processConstantValue(DataInputStream dis) throws IOException
+	private ConstantValue processConstantValue(DataInputStream dis) throws IOException
 	{
 		int constantvalue_index = dis.readUnsignedShort();
 
 		debug("processConstantValue constantvalue_index: " + constantvalue_index);
 
-		// TODO finish this
+		return new ConstantValue(constantvalue_index);
 	}
 
-	private void processSourceFile(DataInputStream dis) throws IOException
+	private SourceFile processSourceFile(DataInputStream dis) throws IOException
 	{
 		int sourcefile_index = dis.readUnsignedShort();
 
 		debug("processSourceFile sourcefile_index: " + sourcefile_index);
 
-		// TODO finish this
+		return new SourceFile(sourcefile_index);
 	}
 
 	private void encloser()
@@ -1038,12 +1042,24 @@ public class ClassAct
 		};
 	}
 
-	private void processEnclosingMethod(DataInputStream dis) throws IOException
+	public void tryCatch()
+	{
+		try
+		{
+			int value = Integer.parseInt("123");
+		}
+		catch (NumberFormatException nfe)
+		{
+			nfe.printStackTrace();
+		}
+	}
+
+	private EnclosingMethod processEnclosingMethod(DataInputStream dis) throws IOException
 	{
 		int class_index = dis.readUnsignedShort();
 		int method_index = dis.readUnsignedShort();
 		debug("processEnclosingMethod class_index: " + class_index + " method_index:" + method_index);
 
-		// TODO finish this
+		return new EnclosingMethod(class_index, method_index);
 	}
 }

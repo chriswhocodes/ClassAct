@@ -3,28 +3,29 @@ package com.chrisnewland.classact.model.attribute;
 import com.chrisnewland.classact.model.AttributeType;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
-public class Signature implements Attribute
+public class ConstantValue implements Attribute
 {
 	@Override
 	public AttributeType getType()
 	{
-		return AttributeType.Signature;
+		return AttributeType.ConstantValue;
 	}
 
-	private int signatureIndex;
+	private int index;
 
-	public Signature(int signatureIndex)
+	public ConstantValue(int index)
 	{
-		this.signatureIndex = signatureIndex;
+		this.index = index;
 	}
 
-	public int getSignatureIndex()
+	public int getIndex()
 	{
-		return signatureIndex;
+		return index;
 	}
 
+	@Override
 	public String toString(ConstantPool constantPool)
 	{
-		return constantPool.toString(signatureIndex);
+		return constantPool.toString(index);
 	}
 }
