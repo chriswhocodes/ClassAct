@@ -1,5 +1,6 @@
 package com.chrisnewland.classact.model.attribute;
 
+import com.chrisnewland.classact.model.AttributeType;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
 public class Attributes
@@ -41,5 +42,24 @@ public class Attributes
 		}
 
 		return builder.toString();
+	}
+
+	public Attribute findAttribute(AttributeType type)
+	{
+		Attribute result = null;
+
+		System.out.println("findAttribute");
+
+		for (Attribute attribute : attributes)
+		{
+			System.out.println(attribute);
+
+			if (attribute.getType() == type)
+			{
+				result = attribute;
+			}
+		}
+
+		return result;
 	}
 }

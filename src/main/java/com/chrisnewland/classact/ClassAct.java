@@ -96,11 +96,16 @@ public class ClassAct
 
 		debug("attributesCount: " + attributesCount);
 
-		classFile.setAttributes(processAttributes(attributesCount));
+		Attributes attributes = new Attributes(attributesCount);
+
+		classFile.setAttributes(attributes);
+
+		processAttributes(attributes, attributesCount);
 
 		classFile.dumpMethods();
 
-		System.out.println(classFile.getAttributes().toString(classFile.getConstantPool()));
+		System.out.println(classFile.getAttributes()
+									.toString(classFile.getConstantPool()));
 
 	}
 
@@ -389,7 +394,9 @@ public class ClassAct
 
 			debug("processFields[" + i + "] attributesCount " + attributesCount);
 
-			processAttributes(attributesCount);
+			Attributes attributes = new Attributes(attributesCount); // TODO attach this
+
+			processAttributes(attributes, attributesCount);
 		}
 	}
 
@@ -420,19 +427,19 @@ public class ClassAct
 
 			MethodInfo methodInfo = new MethodInfo(accessFlags, nameIndex, descriptorIndex);
 
+			Attributes attributes = new Attributes(attributesCount);
+
+			methodInfo.setAttributes(attributes);
+
 			classFile.getMethodInfoList()
 					 .add(methodInfo);
 
-			Attributes attributes = processAttributes(attributesCount);
-
-			methodInfo.setAttributes(attributes);
+			processAttributes(attributes, attributesCount);
 		}
 	}
 
-	private Attributes processAttributes(int attributesCount) throws IOException
+	private void processAttributes(Attributes attributes, int attributesCount) throws IOException
 	{
-		Attributes attributes = new Attributes(attributesCount);
-
 		for (int i = 0; i < attributesCount; i++)
 		{
 			int attributeNameIndex = dis.readUnsignedShort();
@@ -450,8 +457,6 @@ public class ClassAct
 
 			attributes.set(i, processSingleAttribute(attributeName, attributeLength));
 		}
-
-		return attributes;
 	}
 
 	private Attribute processSingleAttribute(String attributeName, int attributeLength) throws IOException
@@ -464,6 +469,7 @@ public class ClassAct
 		{
 		case Code:
 			return processAttributeCode(dis);
+
 		case LineNumberTable:
 			return processAttributeLineNumberTable(dis);
 
@@ -540,7 +546,7 @@ public class ClassAct
 
 		debug("processAttributeCode code_length: " + code_length);
 
-		processCode(code_length);
+		processCode(code, code_length);
 
 		int exception_table_length = dis.readUnsignedShort();
 
@@ -554,12 +560,15 @@ public class ClassAct
 
 		debug("processAttributeCode attributes_count: " + attributes_count);
 
-		code.setAttributes(processAttributes(attributes_count));
+		Attributes attributes = new Attributes(attributes_count);
+		code.setAttributes(attributes);
+
+		processAttributes(attributes, attributes_count);
 
 		return code;
 	}
 
-	private void processCode(int codeLength) throws IOException
+	private void processCode(Code code, int codeLength) throws IOException
 	{
 		currentMethodBCI = 0;
 
@@ -580,8 +589,7 @@ public class ClassAct
 
 				BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
 
-				classFile.getCurrentMethodInfo()
-						 .addBytecodeLine(bytecodeLine);
+				code.addBytecodeLine(bytecodeLine);
 
 				debug("processCode instruction: " + instruction + " has extra bytes " + extraBytes);
 
@@ -598,20 +606,20 @@ public class ClassAct
 			}
 			else if (extraBytes == -1)
 			{
-				processVariableLengthInstruction(instruction);
+				processVariableLengthInstruction(code, instruction);
 			}
 			else
 			{
 				BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, new NoOperands());
-				classFile.getCurrentMethodInfo()
-						 .addBytecodeLine(bytecodeLine);
+
+				code.addBytecodeLine(bytecodeLine);
 			}
 
 			currentMethodBCI++;
 		}
 	}
 
-	private void processVariableLengthInstruction(Instruction instruction) throws IOException
+	private void processVariableLengthInstruction(Code code, Instruction instruction) throws IOException
 	{
 		switch (instruction)
 		{
@@ -619,8 +627,9 @@ public class ClassAct
 		{
 			SwitchTable operandData = new SwitchTable();
 			BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
-			classFile.getCurrentMethodInfo()
-					 .addBytecodeLine(bytecodeLine);
+
+			code.addBytecodeLine(bytecodeLine);
+
 			processLookupSwitch(dis, operandData);
 		}
 		break;
@@ -628,8 +637,9 @@ public class ClassAct
 		{
 			SwitchTable operandData = new SwitchTable();
 			BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
-			classFile.getCurrentMethodInfo()
-					 .addBytecodeLine(bytecodeLine);
+
+			code.addBytecodeLine(bytecodeLine);
+
 			processTableSwitch(dis, operandData);
 		}
 		break;
@@ -637,8 +647,9 @@ public class ClassAct
 		{
 			ListOfInteger operandData = new ListOfInteger();
 			BytecodeLine bytecodeLine = new BytecodeLine(currentMethodBCI, instruction, operandData);
-			classFile.getCurrentMethodInfo()
-					 .addBytecodeLine(bytecodeLine);
+
+			code.addBytecodeLine(bytecodeLine);
+
 			processWide(dis, operandData);
 		}
 		break;

@@ -1,7 +1,11 @@
 package com.chrisnewland.classact.model.attribute;
 
 import com.chrisnewland.classact.model.AttributeType;
+import com.chrisnewland.classact.model.BytecodeLine;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Code implements Attribute
 {
@@ -13,7 +17,10 @@ public class Code implements Attribute
 
 	private int maxStack;
 	private int maxLocals;
+
 	private byte[] code;
+	private List<BytecodeLine> bytecodeLines = new ArrayList<>();
+
 	private ExceptionTable exceptionTable;
 	private Attributes attributes;
 
@@ -65,6 +72,16 @@ public class Code implements Attribute
 	public void setAttributes(Attributes attributes)
 	{
 		this.attributes = attributes;
+	}
+
+	public void addBytecodeLine(BytecodeLine bytecodeLine)
+	{
+		bytecodeLines.add(bytecodeLine);
+	}
+
+	public List<BytecodeLine> getBytecodeLines()
+	{
+		return bytecodeLines;
 	}
 
 	@Override

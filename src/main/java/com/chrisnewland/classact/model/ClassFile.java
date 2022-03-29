@@ -147,7 +147,10 @@ public class ClassFile
 																										   methodInfo.getDescriptorIndex())
 																								   .toString(constantPool));
 
-			List<BytecodeLine> bytecodeLines = methodInfo.getBytecodeLines();
+			Code code = (Code) methodInfo.getAttributes()
+										 .findAttribute(AttributeType.Code);
+
+			List<BytecodeLine> bytecodeLines = code.getBytecodeLines();
 
 			System.out.println("Bytecode:");
 
@@ -158,7 +161,8 @@ public class ClassFile
 																				   .toString(line, constantPool));
 			}
 
-			System.out.println(methodInfo.getAttributes().toString(constantPool));
+			System.out.println(methodInfo.getAttributes()
+										 .toString(constantPool));
 		}
 	}
 }
