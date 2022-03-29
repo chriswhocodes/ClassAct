@@ -33,7 +33,7 @@ public class Attributes
 				if (attribute != null) // remove once all attributes are handled
 				{
 					builder.append(attribute.getType())
-						   .append("\n");
+						   .append(":\n");
 
 					builder.append(attribute.toString(constantPool))
 						   .append("\n");
@@ -48,12 +48,8 @@ public class Attributes
 	{
 		Attribute result = null;
 
-		System.out.println("findAttribute");
-
 		for (Attribute attribute : attributes)
 		{
-			System.out.println(attribute);
-
 			if (attribute.getType() == type)
 			{
 				result = attribute;

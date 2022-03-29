@@ -10,159 +10,140 @@ import com.chrisnewland.classact.model.constantpool.entry.EntryNameAndType;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ClassFile
-{
-	private int magicNumber;
-	private int minorVersion;
-	private int majorVersion;
-	private ConstantPool constantPool;
-	private int accessFlags;
-	private int thisClass;
-	private int superClass;
+public class ClassFile {
+    private int magicNumber;
+    private int minorVersion;
+    private int majorVersion;
+    private ConstantPool constantPool;
+    private int accessFlags;
+    private int thisClass;
+    private int superClass;
 
-	private Attributes attributes;
+    private Attributes attributes;
 
-	private List<MethodInfo> methodInfoList = new ArrayList<>();
+    private List<FieldInfo> fieldInfoList = new ArrayList<>();
 
-	public List<MethodInfo> getMethodInfoList()
-	{
-		return methodInfoList;
-	}
+    private List<MethodInfo> methodInfoList = new ArrayList<>();
 
-	public MethodInfo getCurrentMethodInfo()
-	{
-		return methodInfoList.get(methodInfoList.size() - 1);
-	}
+    public List<MethodInfo> getMethodInfoList() {
+        return methodInfoList;
+    }
 
-	public int getMagicNumber()
-	{
-		return magicNumber;
-	}
+    public void addMethodInfo(MethodInfo methodInfo) {
+        methodInfoList.add(methodInfo);
+    }
 
-	public void setMagicNumber(int magicNumber)
-	{
-		this.magicNumber = magicNumber;
-	}
+    public List<FieldInfo> getFieldInfoList() {
+        return fieldInfoList;
+    }
 
-	public int getMinorVersion()
-	{
-		return minorVersion;
-	}
+    public void addFieldInfo(FieldInfo fieldInfo) {
+        fieldInfoList.add(fieldInfo);
+    }
 
-	public void setMinorVersion(int minorVersion)
-	{
-		this.minorVersion = minorVersion;
-	}
+    public int getMagicNumber() {
+        return magicNumber;
+    }
 
-	public int getMajorVersion()
-	{
-		return majorVersion;
-	}
+    public void setMagicNumber(int magicNumber) {
+        this.magicNumber = magicNumber;
+    }
 
-	public void setMajorVersion(int majorVersion)
-	{
-		this.majorVersion = majorVersion;
-	}
+    public int getMinorVersion() {
+        return minorVersion;
+    }
 
-	public ConstantPool getConstantPool()
-	{
-		return constantPool;
-	}
+    public void setMinorVersion(int minorVersion) {
+        this.minorVersion = minorVersion;
+    }
 
-	public void setConstantPool(ConstantPool constantPool)
-	{
-		this.constantPool = constantPool;
-	}
+    public int getMajorVersion() {
+        return majorVersion;
+    }
 
-	public int getAccessFlags()
-	{
-		return accessFlags;
-	}
+    public void setMajorVersion(int majorVersion) {
+        this.majorVersion = majorVersion;
+    }
 
-	public void setAccessFlags(int accessFlags)
-	{
-		this.accessFlags = accessFlags;
-	}
+    public ConstantPool getConstantPool() {
+        return constantPool;
+    }
 
-	public int getThisClass()
-	{
-		return thisClass;
-	}
+    public void setConstantPool(ConstantPool constantPool) {
+        this.constantPool = constantPool;
+    }
 
-	public void setThisClass(int thisClass)
-	{
-		this.thisClass = thisClass;
-	}
+    public int getAccessFlags() {
+        return accessFlags;
+    }
 
-	public int getSuperClass()
-	{
-		return superClass;
-	}
+    public void setAccessFlags(int accessFlags) {
+        this.accessFlags = accessFlags;
+    }
 
-	public void setSuperClass(int superClass)
-	{
-		this.superClass = superClass;
-	}
+    public int getThisClass() {
+        return thisClass;
+    }
 
-	public Attributes getAttributes()
-	{
-		return attributes;
-	}
+    public void setThisClass(int thisClass) {
+        this.thisClass = thisClass;
+    }
 
-	public void setAttributes(Attributes attributes)
-	{
-		this.attributes = attributes;
-	}
+    public int getSuperClass() {
+        return superClass;
+    }
 
-	public void dumpMethods()
-	{
-		System.out.println("dumpMethods");
+    public void setSuperClass(int superClass) {
+        this.superClass = superClass;
+    }
 
-		for (int i = 0; i < constantPool.size(); i++)
-		{
-			ConstantPoolEntry entry = constantPool.get(i);
+    public Attributes getAttributes() {
+        return attributes;
+    }
 
-			if (entry instanceof EntryMethodRef)
-			{
-				EntryMethodRef entryMethodRef = (EntryMethodRef) entry;
+    public void setAttributes(Attributes attributes) {
+        this.attributes = attributes;
+    }
 
-				EntryClass entryClass = (EntryClass) constantPool.get(entryMethodRef.getClassIndex());
+    public void dumpMethods() {
+        System.out.println("dumpMethods");
 
-				String className = constantPool.toString(entryClass.getNameIndex());
+        for (MethodInfo methodInfo : methodInfoList) {
+            System.out.println("Method:" + constantPool.get(methodInfo.getNameIndex())
+                    .toString(constantPool) + " " + constantPool.get(
+                            methodInfo.getDescriptorIndex())
+                    .toString(constantPool));
 
-				EntryNameAndType entryNameAndType = (EntryNameAndType) constantPool.get(entryMethodRef.getNameAndTypeIndex());
+            Code code = (Code) methodInfo.getAttributes()
+                    .findAttribute(AttributeType.Code);
 
-				String methodName = constantPool.toString(entryNameAndType.getNameIndex());
+            List<BytecodeLine> bytecodeLines = code.getBytecodeLines();
 
-				String descriptor = constantPool.toString(entryNameAndType.getDescriptorIndex());
+            System.out.println("Bytecode:");
 
-				System.out.println("Class:" + className + " method:" + methodName + " descriptor:" + descriptor);
-			}
-		}
+            for (BytecodeLine line : bytecodeLines) {
+                Instruction instruction = line.getInstruction();
+                System.out.println(line.getBci() + " : " + instruction + " " + line.getOperandData()
+                        .toString(line, constantPool));
+            }
 
-		for (MethodInfo methodInfo : methodInfoList)
-		{
-			System.out.println("Method:" + constantPool.get(methodInfo.getNameIndex())
-													   .toString(constantPool) + " " + constantPool.get(
-																										   methodInfo.getDescriptorIndex())
-																								   .toString(constantPool));
+            System.out.println(methodInfo.getAttributes()
+                    .toString(constantPool));
+        }
+    }
 
-			Code code = (Code) methodInfo.getAttributes()
-										 .findAttribute(AttributeType.Code);
 
-			List<BytecodeLine> bytecodeLines = code.getBytecodeLines();
+    public void dumpFields() {
+        System.out.println("dumpFields");
 
-			System.out.println("Bytecode:");
+        for (FieldInfo fieldInfo : fieldInfoList) {
+            System.out.println("FieldInfo:" + constantPool.get(fieldInfo.getNameIndex())
+                    .toString(constantPool) + " " + constantPool.get(
+                            fieldInfo.getDescriptorIndex())
+                    .toString(constantPool));
 
-			for (BytecodeLine line : bytecodeLines)
-			{
-				Instruction instruction = line.getInstruction();
-				System.out.println(line.getBci() + " : " + instruction + " " + line.getOperandData()
-																				   .toString(line, constantPool));
-			}
-
-			System.out.println(methodInfo.getAttributes()
-										 .toString(constantPool));
-		}
-	}
+            System.out.println(fieldInfo.getAttributes()
+                    .toString(constantPool));
+        }
+    }
 }

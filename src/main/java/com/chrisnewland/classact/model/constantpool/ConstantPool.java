@@ -13,7 +13,7 @@ public class ConstantPool
 	{
 		entries[index] = entry;
 
-		System.out.println("pool[" + index + "] = " + entry.toString());
+//		System.out.println("pool[" + index + "] = " + entry.toString(this));
 	}
 
 	public ConstantPoolEntry get(int index)
@@ -64,5 +64,4 @@ public class ConstantPool
 
 		return builder.toString();
 	}
-
 }

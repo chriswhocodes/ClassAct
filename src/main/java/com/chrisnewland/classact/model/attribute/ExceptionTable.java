@@ -25,7 +25,7 @@ public class ExceptionTable
 
 		for (ExceptionTableEntry entry : entries)
 		{
-			builder.append(String.format("%8s%8s%8s%8s", entry.getStartPc(), entry.getEndPc(), entry.getHandlerPc(),
+			builder.append(String.format("%10s%10s%10s%10s", entry.getStartPc(), entry.getEndPc(), entry.getHandlerPc(),
 						   constantPool.toString(entry.getCatchType())))
 				   .append("\n");
 		}
