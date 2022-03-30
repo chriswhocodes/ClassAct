@@ -2,6 +2,7 @@ package com.chrisnewland.classact.model.constantpool.entry;
 
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolEntry;
+import com.chrisnewland.classact.model.constantpool.ConstantPoolType;
 
 public class EntryFieldRef implements ConstantPoolEntry
 {
@@ -22,6 +23,11 @@ public class EntryFieldRef implements ConstantPoolEntry
 	public int getNameAndTypeIndex()
 	{
 		return nameAndTypeIndex;
+	}
+
+	@Override
+	public ConstantPoolType getType() {
+		return ConstantPoolType.CONSTANT_FieldRef;
 	}
 
 	@Override

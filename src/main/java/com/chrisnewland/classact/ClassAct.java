@@ -3,7 +3,7 @@ package com.chrisnewland.classact;
 import com.chrisnewland.classact.model.*;
 import com.chrisnewland.classact.model.attribute.*;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
-import com.chrisnewland.classact.model.constantpool.ConstantPoolTag;
+import com.chrisnewland.classact.model.constantpool.ConstantPoolType;
 import com.chrisnewland.classact.model.constantpool.entry.*;
 
 import java.io.*;
@@ -129,7 +129,7 @@ public class ClassAct {
 
             currentPoolIndex = i + 1;
 
-            ConstantPoolTag tag = ConstantPoolTag.valueOf(tagByte)
+            ConstantPoolType tag = ConstantPoolType.valueOf(tagByte)
                     .get();
 
             debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
@@ -138,13 +138,13 @@ public class ClassAct {
                 case CONSTANT_Class:
                     processConstantClass(dis);
                     break;
-                case CONSTANT_Fieldref:
+                case CONSTANT_FieldRef:
                     processConstantFieldRef(dis);
                     break;
-                case CONSTANT_Methodref:
+                case CONSTANT_MethodRef:
                     processConstantMethodRef(dis);
                     break;
-                case CONSTANT_InterfaceMethodref:
+                case CONSTANT_InterfaceMethodRef:
                     processConstantInterfaceMethodRef(dis);
                     break;
                 case CONSTANT_String:
@@ -171,17 +171,23 @@ public class ClassAct {
                     processConstantUTF8(dis);
                     break;
                 case CONSTANT_MethodHandle:
-                    throw new UnsupportedOperationException();
+                    processConstantMethodHandle(dis);
+                    break;
                 case CONSTANT_MethodType:
-                    throw new UnsupportedOperationException();
+                    processConstantMethodType(dis);
+                    break;
                 case CONSTANT_Dynamic:
-                    throw new UnsupportedOperationException();
+                    processConstantDynamic(dis);
+                    break;
                 case CONSTANT_InvokeDynamic:
-                    throw new UnsupportedOperationException();
+                    processConstantInvokeDynamic(dis);
+                    break;
                 case CONSTANT_Module:
-                    throw new UnsupportedOperationException();
+                    processConstantModule(dis);
+                    break;
                 case CONSTANT_Package:
-                    throw new UnsupportedOperationException();
+                    processConstantPackage(dis);
+                    break;
             }
         }
     }
@@ -210,6 +216,84 @@ public class ClassAct {
 
         classFile.getConstantPool()
                 .set(currentPoolIndex, entryMethodRef);
+    }
+
+    private void processConstantMethodHandle(DataInputStream dis) throws IOException {
+        int referenceKind = dis.readUnsignedShort();
+
+        debug("processConstantMethodHandle referenceKind " + referenceKind);
+
+        int referenceIndex = dis.readUnsignedShort();
+
+        debug("processConstantMethodRef referenceIndex " + referenceIndex);
+
+        EntryMethodHandle entryMethodHandle = new EntryMethodHandle(referenceKind, referenceIndex);
+
+        classFile.getConstantPool()
+                .set(currentPoolIndex, entryMethodHandle);
+    }
+
+    private void processConstantMethodType(DataInputStream dis) throws IOException {
+        int descriptorIndex = dis.readUnsignedShort();
+
+        debug("processConstantMethodType descriptorIndex " + descriptorIndex);
+
+        EntryMethodType entryMethodType = new EntryMethodType(descriptorIndex);
+
+        classFile.getConstantPool()
+                .set(currentPoolIndex, entryMethodType);
+    }
+
+    private void processConstantDynamic(DataInputStream dis) throws IOException {
+        int bootstrapMethodAttrIndex = dis.readUnsignedShort();
+
+        debug("processConstantDynamic bootstrapMethodAttrIndex " + bootstrapMethodAttrIndex);
+
+        int nameAndTypeIndex = dis.readUnsignedShort();
+
+        debug("processConstantDynamic nameAndTypeIndex " + nameAndTypeIndex);
+
+        EntryDynamic entryDynamic = new EntryDynamic(bootstrapMethodAttrIndex, nameAndTypeIndex);
+
+        classFile.getConstantPool()
+                .set(currentPoolIndex, entryDynamic);
+    }
+
+    private void processConstantInvokeDynamic(DataInputStream dis) throws IOException {
+        int bootstrapMethodAttrIndex = dis.readUnsignedShort();
+
+        debug("processConstantInvokeDynamic bootstrapMethodAttrIndex " + bootstrapMethodAttrIndex);
+
+        int nameAndTypeIndex = dis.readUnsignedShort();
+
+        debug("processConstantInvokeDynamic nameAndTypeIndex " + nameAndTypeIndex);
+
+        EntryInvokeDynamic entryInvokeDynamic = new EntryInvokeDynamic(bootstrapMethodAttrIndex, nameAndTypeIndex);
+
+        classFile.getConstantPool()
+                .set(currentPoolIndex, entryInvokeDynamic);
+    }
+
+    private void processConstantModule(DataInputStream dis) throws IOException {
+        int nameIndex = dis.readUnsignedShort();
+
+        debug("processConstantModule nameIndex " + nameIndex);
+
+        EntryModule entryModule = new EntryModule(nameIndex);
+
+        classFile.getConstantPool()
+                .set(currentPoolIndex, entryModule);
+    }
+
+    private void processConstantPackage(DataInputStream dis) throws IOException {
+        int nameIndex = dis.readUnsignedShort();
+
+        debug("processConstantPackage nameIndex " + nameIndex);
+
+        EntryPackage entryPackage = new EntryPackage(nameIndex);
+
+        classFile.getConstantPool()
+                .set(currentPoolIndex, entryPackage);
     }
 
     private void processConstantInterfaceMethodRef(DataInputStream dis) throws IOException {
@@ -1001,16 +1085,19 @@ public class ClassAct {
         return 42;
     }
 
+    private MethodType methodType;
+
+    private MethodHandle methodHandle;
+
     private void methodHandle() {
         try {
-            MethodType mt = MethodType.methodType(int.class);
+            methodType = MethodType.methodType(int.class);
 
-            MethodHandle mh = MethodHandles.lookup().findVirtual(getClass(), "getTheValue", mt);
+            methodHandle = MethodHandles.lookup().findVirtual(getClass(), "getTheValue", methodType);
 
-            mh.invokeExact();
+            methodHandle.invokeExact();
         } catch (Throwable t) {
             t.printStackTrace();
         }
     }
-
 }
