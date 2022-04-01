@@ -50,6 +50,7 @@ public class Attributes
 
 		for (Attribute attribute : attributes)
 		{
+			System.out.println("attr:"+attribute);
 			if (attribute.getType() == type)
 			{
 				result = attribute;

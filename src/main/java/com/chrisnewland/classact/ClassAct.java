@@ -2,6 +2,7 @@ package com.chrisnewland.classact;
 
 import com.chrisnewland.classact.model.*;
 import com.chrisnewland.classact.model.attribute.*;
+import com.chrisnewland.classact.model.attribute.Deprecated;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolType;
 import com.chrisnewland.classact.model.constantpool.entry.*;
@@ -561,20 +562,25 @@ public class ClassAct {
             case LocalVariableTable:
                 return processLocalVariableTable(dis);
 
+            case LocalVariableTypeTable:
+                return processLocalVariableTypeTable(dis);
+
+            case SourceDebugExtension:
+                return processSourceDebugExtension(attributeLength, dis);
+
+            case Deprecated:
+                return processDeprecated(dis);
+
             default:
+                System.out.println("unhandled: " + attributeType);
                 byte[] attributeInfo = new byte[attributeLength];
                 dis.read(attributeInfo);
                 return null;
 
             //		case StackMapTable:
             //			break;
-            //		case SourceDebugExtension:
-            //			break;
 
-            //		case LocalVariableTypeTable:
-            //			break;
-            //		case Deprecated:
-            //			break;
+
             //		case RuntimeVisibleAnnotations:
             //			break;
             //		case RuntimeInvisibleAnnotations:
@@ -945,7 +951,38 @@ public class ClassAct {
         }
 
         return localVariableTable;
+    }
 
+    private LocalVariableTypeTable processLocalVariableTypeTable(DataInputStream dis) throws IOException {
+        int local_variable_type_table_length = dis.readUnsignedShort();
+
+        debug("processLocalVariableTypeTable local_variable_table_length: " + local_variable_type_table_length);
+
+        LocalVariableTypeTable localVariableTypeTable = new LocalVariableTypeTable(local_variable_type_table_length);
+
+        for (int l = 0; l < local_variable_type_table_length; l++) {
+            int start_pc = dis.readUnsignedShort();
+            int length = dis.readUnsignedShort();
+            int nameIndex = dis.readUnsignedShort();
+            int signatureIndex = dis.readUnsignedShort();
+            int index = dis.readUnsignedShort();
+
+            localVariableTypeTable.setEntry(l, new LocalVariableTypeTableEntry(start_pc, length, nameIndex, signatureIndex, index));
+        }
+
+        return localVariableTypeTable;
+    }
+
+    private SourceDebugExtension processSourceDebugExtension(int attributeLength, DataInputStream dis) throws IOException {
+        SourceDebugExtension sourceDebugExtension = new SourceDebugExtension(attributeLength);
+
+        dis.read(sourceDebugExtension.getDebugExtension());
+
+        return sourceDebugExtension;
+    }
+
+    private Deprecated processDeprecated(DataInputStream dis) {
+        return new Deprecated();
     }
 
     private Exceptions processExceptions(DataInputStream dis) throws IOException {
@@ -1099,5 +1136,10 @@ public class ClassAct {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+    }
+
+    @java.lang.Deprecated
+    public void deprecatedMethod() {
+        System.out.println("foo");
     }
 }
