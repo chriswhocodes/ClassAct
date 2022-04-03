@@ -3,6 +3,10 @@ package com.chrisnewland.classact;
 import com.chrisnewland.classact.model.*;
 import com.chrisnewland.classact.model.attribute.*;
 import com.chrisnewland.classact.model.attribute.Deprecated;
+import com.chrisnewland.classact.model.attribute.annotations.ElementValue;
+import com.chrisnewland.classact.model.attribute.annotations.ElementValuePair;
+import com.chrisnewland.classact.model.attribute.annotations.RuntimeVisibleAnnotations;
+import com.chrisnewland.classact.model.attribute.annotations.RuntimeAnnotation;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolType;
 import com.chrisnewland.classact.model.constantpool.entry.*;
@@ -571,6 +575,12 @@ public class ClassAct {
             case Deprecated:
                 return processDeprecated(dis);
 
+            case BootstrapMethods:
+                return processBootstrapMethods(dis);
+
+            case RuntimeVisibleAnnotations:
+                return processRuntimeVisibleAnnotations(dis);
+
             default:
                 System.out.println("unhandled: " + attributeType);
                 byte[] attributeInfo = new byte[attributeLength];
@@ -580,9 +590,6 @@ public class ClassAct {
             //		case StackMapTable:
             //			break;
 
-
-            //		case RuntimeVisibleAnnotations:
-            //			break;
             //		case RuntimeInvisibleAnnotations:
             //			break;
             //		case RuntimeVisibleParameterAnnotations:
@@ -590,8 +597,6 @@ public class ClassAct {
             //		case RuntimeInvisibleParameterAnnotations:
             //			break;
             //		case AnnotationDefault:
-            //			break;
-            //		case BootstrapMethods:
             //			break;
         }
     }
@@ -983,6 +988,88 @@ public class ClassAct {
 
     private Deprecated processDeprecated(DataInputStream dis) {
         return new Deprecated();
+    }
+
+    private BootstrapMethods processBootstrapMethods(DataInputStream dis) throws IOException {
+
+        int numBootstrapMethods = dis.readUnsignedShort();
+
+        BootstrapMethods bootstrapMethods = new BootstrapMethods(numBootstrapMethods);
+
+        for (int i = 0; i < numBootstrapMethods; i++) {
+            int bootstrapMethodRef = dis.readUnsignedShort();
+
+            int numBootstrapArguments = dis.readUnsignedShort();
+
+            BootstrapMethodsEntry bootstrapMethodsEntry = new BootstrapMethodsEntry(bootstrapMethodRef, numBootstrapArguments);
+
+            for (int j = 0; j < numBootstrapArguments; j++) {
+                int argumentIndex = dis.readUnsignedShort();
+
+                bootstrapMethodsEntry.setArgument(j, argumentIndex);
+            }
+
+            bootstrapMethods.set(i, bootstrapMethodsEntry);
+        }
+
+        return bootstrapMethods;
+    }
+
+    private RuntimeVisibleAnnotations processRuntimeVisibleAnnotations(DataInputStream dis) throws IOException {
+        int numAnnotations = dis.readUnsignedShort();
+
+        RuntimeVisibleAnnotations runtimeVisibleAnnotations = new RuntimeVisibleAnnotations(numAnnotations);
+
+        for (int i = 0; i < numAnnotations; i++) {
+            int typeIndex = dis.readUnsignedShort();
+
+            int numElementValues = dis.readUnsignedShort();
+
+            RuntimeAnnotation runtimeAnnotation = new RuntimeAnnotation(typeIndex, numElementValues);
+
+            processRuntimeAnnotation(runtimeAnnotation, dis);
+
+            runtimeVisibleAnnotations.set(i, runtimeAnnotation);
+        }
+
+        return runtimeVisibleAnnotations;
+    }
+
+    private void processRuntimeAnnotation(RuntimeAnnotation runtimeAnnotation, DataInputStream dis) throws IOException {
+        int count = runtimeAnnotation.getElementValuePairs().length;
+
+        for (int i = 0; i < count; i++) {
+
+            int elementNameIndex = dis.readUnsignedShort();
+
+            int tag = dis.readUnsignedByte();
+
+            ElementValue elementValue = processElementValue(tag, dis);
+
+            ElementValuePair elementValuePair = new ElementValuePair(elementNameIndex, elementValue);
+
+            runtimeAnnotation.setElementValuePair(i, elementValuePair);
+        }
+    }
+
+    private ElementValue processElementValue(int tag, DataInputStream dis) {
+        switch (tag) {
+//    B 	byte 	const_value_index 	CONSTANT_Integer
+//    C 	char 	const_value_index 	CONSTANT_Integer
+//    D 	double 	const_value_index 	CONSTANT_Double
+//    F 	float 	const_value_index 	CONSTANT_Float
+//    I 	int 	const_value_index 	CONSTANT_Integer
+//    J 	long 	const_value_index 	CONSTANT_Long
+//    S 	short 	const_value_index 	CONSTANT_Integer
+//    Z 	boolean 	const_value_index 	CONSTANT_Integer
+//    s 	String 	const_value_index 	CONSTANT_Utf8
+//    e 	Enum class 	enum_const_value 	Not applicable
+//        c 	Class 	class_info_index 	Not applicable
+//    @ 	Annotation interface 	annotation_value 	Not applicable
+//[ 	Array type 	array_value 	Not applicable
+        }
+
+        return null;
     }
 
     private Exceptions processExceptions(DataInputStream dis) throws IOException {
