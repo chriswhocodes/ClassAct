@@ -29,9 +29,10 @@ public class ElementValuePair
 
 		builder.append("elementNameIndex:")
 			   .append(elementNameIndex)
-			   .append("\n");
-
-		builder.append(value.toString(constantPool))
+			   .append(' ')
+			   .append(constantPool.toString(elementNameIndex))
+			   .append('=')
+			   .append(value.toString(constantPool))
 			   .append("\n");
 
 		return builder.toString();

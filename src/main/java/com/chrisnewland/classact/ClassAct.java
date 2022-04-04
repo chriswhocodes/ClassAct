@@ -615,6 +615,15 @@ public class ClassAct
 		case RuntimeVisibleAnnotations:
 			return processRuntimeVisibleAnnotations(dis);
 
+		case RuntimeInvisibleAnnotations:
+			return processRuntimeInvisibleAnnotations(dis);
+
+		case RuntimeVisibleParameterAnnotations:
+			return processRuntimeVisibleParameterAnnotations(dis);
+
+		case RuntimeInvisibleParameterAnnotations:
+			return processRuntimeInvisibleParameterAnnotations(dis);
+
 		default:
 			System.out.println("unhandled: " + attributeType);
 			byte[] attributeInfo = new byte[attributeLength];
@@ -624,14 +633,18 @@ public class ClassAct
 		//		case StackMapTable:
 		//			break;
 
-		//		case RuntimeInvisibleAnnotations:
-		//			break;
-		//		case RuntimeVisibleParameterAnnotations:
-		//			break;
-		//		case RuntimeInvisibleParameterAnnotations:
-		//			break;
-		//		case AnnotationDefault:
-		//			break;
+		//		RuntimeVisibleTypeAnnotations,
+		//				RuntimeInvisibleTypeAnnotations,
+		//				AnnotationDefault,
+		//				BootstrapMethods,
+		//				MethodParameters,
+		//				Module,
+		//				ModulePackages,
+		//				ModuleMainClass,
+		//				NestHost,
+		//				NestMembers,
+		//				Record,
+		//				PermittedSubclasses
 		}
 	}
 
@@ -1104,6 +1117,20 @@ public class ClassAct
 		return runtimeVisibleAnnotations;
 	}
 
+	private RuntimeInvisibleAnnotations processRuntimeInvisibleAnnotations(DataInputStream dis) throws IOException
+	{
+		int numAnnotations = dis.readUnsignedShort();
+
+		RuntimeInvisibleAnnotations runtimeInvisibleAnnotations = new RuntimeInvisibleAnnotations(numAnnotations);
+
+		for (int i = 0; i < numAnnotations; i++)
+		{
+			runtimeInvisibleAnnotations.set(i, processAnnotation(dis));
+		}
+
+		return runtimeInvisibleAnnotations;
+	}
+
 	private Annotation processAnnotation(DataInputStream dis) throws IOException
 	{
 		int typeIndex = dis.readUnsignedShort();
@@ -1207,6 +1234,52 @@ public class ClassAct
 		}
 
 		return exceptions;
+	}
+
+	private RuntimeVisibleParameterAnnotations processRuntimeVisibleParameterAnnotations(DataInputStream dis) throws IOException
+	{
+		int numParameters = dis.readUnsignedByte();
+
+		RuntimeVisibleParameterAnnotations runtimeVisibleParameterAnnotations = new RuntimeVisibleParameterAnnotations(
+				numParameters);
+
+		for (int i = 0; i < numParameters; i++)
+		{
+			runtimeVisibleParameterAnnotations.set(i, processParameterAnnotation(dis));
+		}
+
+		return runtimeVisibleParameterAnnotations;
+	}
+
+	private RuntimeInvisibleParameterAnnotations processRuntimeInvisibleParameterAnnotations(DataInputStream dis) throws IOException
+	{
+		int numParameters = dis.readUnsignedByte();
+
+		RuntimeInvisibleParameterAnnotations runtimeInvisibleParameterAnnotations = new RuntimeInvisibleParameterAnnotations(
+				numParameters);
+
+		for (int i = 0; i < numParameters; i++)
+		{
+			runtimeInvisibleParameterAnnotations.set(i, processParameterAnnotation(dis));
+		}
+
+		return runtimeInvisibleParameterAnnotations;
+	}
+
+	private ParameterAnnotation processParameterAnnotation(DataInputStream dis) throws IOException
+	{
+		int numAnnotations = dis.readUnsignedShort();
+
+		ParameterAnnotation parameterAnnotation = new ParameterAnnotation(numAnnotations);
+
+		for (int i = 0; i < numAnnotations; i++)
+		{
+			Annotation annotation = processAnnotation(dis);
+
+			parameterAnnotation.set(i, annotation);
+		}
+
+		return parameterAnnotation;
 	}
 
 	private class Inner1
@@ -1374,5 +1447,15 @@ public class ClassAct
 	public void deprecatedMethod()
 	{
 		System.out.println("foo");
+	}
+
+	@interface MyAnnotation
+	{
+		String foo();
+	}
+
+	public void testParameterAnnotations(@MyAnnotation(foo = "bar") Object param)
+	{
+		System.out.println(param);
 	}
 }

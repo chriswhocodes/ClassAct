@@ -1,13 +1,12 @@
 package com.chrisnewland.classact.model.attribute.annotations;
 
-import com.chrisnewland.classact.model.AttributeType;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
-public class RuntimeVisibleAnnotations extends RuntimeAnnotations
+public class ParameterAnnotation
 {
 	private Annotation[] annotations;
 
-	public RuntimeVisibleAnnotations(int count)
+	public ParameterAnnotation(int count)
 	{
 		annotations = new Annotation[count];
 	}
@@ -17,13 +16,11 @@ public class RuntimeVisibleAnnotations extends RuntimeAnnotations
 		annotations[index] = entry;
 	}
 
-	@Override
-	public AttributeType getType()
+	public Annotation[] getAnnotations()
 	{
-		return AttributeType.RuntimeVisibleAnnotations;
+		return annotations;
 	}
 
-	@Override
 	public String toString(ConstantPool constantPool)
 	{
 		StringBuilder builder = new StringBuilder();
@@ -37,8 +34,4 @@ public class RuntimeVisibleAnnotations extends RuntimeAnnotations
 		return builder.toString();
 	}
 
-	public Annotation[] getAnnotations()
-	{
-		return annotations;
-	}
 }

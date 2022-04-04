@@ -20,6 +20,16 @@ public enum AttributeType
 	RuntimeInvisibleAnnotations,
 	RuntimeVisibleParameterAnnotations,
 	RuntimeInvisibleParameterAnnotations,
+	RuntimeVisibleTypeAnnotations,
+	RuntimeInvisibleTypeAnnotations,
 	AnnotationDefault,
-	BootstrapMethods
+	BootstrapMethods,
+	MethodParameters,
+	Module,
+	ModulePackages,
+	ModuleMainClass,
+	NestHost,
+	NestMembers,
+	Record,
+	PermittedSubclasses
 }
