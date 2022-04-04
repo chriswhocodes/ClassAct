@@ -3,29 +3,43 @@ package com.chrisnewland.classact.model.attribute.annotations;
 import com.chrisnewland.classact.model.AttributeType;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
-public class RuntimeVisibleAnnotations extends RuntimeAnnotations {
+public class RuntimeVisibleAnnotations extends RuntimeAnnotations
+{
 
-    private RuntimeAnnotation[] entries;
+	private Annotation[] annotations;
 
-    public RuntimeVisibleAnnotations(int count) {
-        entries = new RuntimeAnnotation[count];
-    }
+	public RuntimeVisibleAnnotations(int count)
+	{
+		annotations = new Annotation[count];
+	}
 
-    public void set(int index, RuntimeAnnotation entry) {
-        entries[index] = entry;
-    }
+	public void set(int index, Annotation entry)
+	{
+		annotations[index] = entry;
+	}
 
-    @Override
-    public AttributeType getType() {
-        return AttributeType.RuntimeVisibleAnnotations;
-    }
+	@Override
+	public AttributeType getType()
+	{
+		return AttributeType.RuntimeVisibleAnnotations;
+	}
 
-    @Override
-    public String toString(ConstantPool constantPool) {
-        return null;
-    }
+	@Override
+	public String toString(ConstantPool constantPool)
+	{
+		StringBuilder builder = new StringBuilder();
 
-    public RuntimeAnnotation[] getEntries() {
-        return entries;
-    }
+		for (Annotation annotation : annotations)
+		{
+			builder.append(annotation.toString(constantPool))
+				   .append("\n");
+		}
+
+		return builder.toString();
+	}
+
+	public Annotation[] getAnnotations()
+	{
+		return annotations;
+	}
 }

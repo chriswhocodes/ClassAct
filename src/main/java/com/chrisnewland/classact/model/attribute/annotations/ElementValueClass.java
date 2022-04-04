@@ -1,13 +1,23 @@
 package com.chrisnewland.classact.model.attribute.annotations;
 
-public class ElementValueClass implements ElementValue {
-    private int classInfoIndex;
+import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
-    public ElementValueClass(int classInfoIndex) {
-        this.classInfoIndex = classInfoIndex;
-    }
+public class ElementValueClass implements ElementValue
+{
+	private int classInfoIndex;
 
-    public int getClassInfoIndex() {
-        return classInfoIndex;
-    }
+	public ElementValueClass(int classInfoIndex)
+	{
+		this.classInfoIndex = classInfoIndex;
+	}
+
+	public int getClassInfoIndex()
+	{
+		return classInfoIndex;
+	}
+
+	public String toString(ConstantPool constantPool)
+	{
+		return constantPool.toString(classInfoIndex);
+	}
 }

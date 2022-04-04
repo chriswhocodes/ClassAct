@@ -5,13 +5,13 @@ import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
 public class RuntimeInvisibleAnnotations extends RuntimeAnnotations {
 
-    private RuntimeAnnotation[] entries;
+    private Annotation[] entries;
 
     public RuntimeInvisibleAnnotations(int count) {
-        entries = new RuntimeAnnotation[count];
+        entries = new Annotation[count];
     }
 
-    public void set(int index, RuntimeAnnotation entry) {
+    public void set(int index, Annotation entry) {
         entries[index] = entry;
     }
 
@@ -25,7 +25,7 @@ public class RuntimeInvisibleAnnotations extends RuntimeAnnotations {
         return null;
     }
 
-    public RuntimeAnnotation[] getEntries() {
+    public Annotation[] getEntries() {
         return entries;
     }
 }
