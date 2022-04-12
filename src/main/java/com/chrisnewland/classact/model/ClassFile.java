@@ -10,6 +10,27 @@ import com.chrisnewland.classact.model.constantpool.entry.EntryNameAndType;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ClassFile {
+    u4             magic;
+    u2             minor_version;
+    u2             major_version;
+    u2             constant_pool_count;
+    cp_info        constant_pool[constant_pool_count-1];
+    u2             access_flags;
+    u2             this_class;
+    u2             super_class;
+    u2             interfaces_count;
+    u2             interfaces[interfaces_count];
+    u2             fields_count;
+    field_info     fields[fields_count];
+    u2             methods_count;
+    method_info    methods[methods_count];
+    u2             attributes_count;
+    attribute_info attributes[attributes_count];
+}
+ */
+
 public class ClassFile {
     private int magicNumber;
     private int minorVersion;
@@ -19,11 +40,23 @@ public class ClassFile {
     private int thisClass;
     private int superClass;
 
-    private Attributes attributes;
+    private List<Integer> interfaceList = new ArrayList<>();
 
     private List<FieldInfo> fieldInfoList = new ArrayList<>();
 
     private List<MethodInfo> methodInfoList = new ArrayList<>();
+
+    private Attributes attributes;
+
+    //======================================
+
+    public List<Integer> getInterfaceList() {
+        return interfaceList;
+    }
+
+    public void addInterface(int interfaceRef) {
+        interfaceList.add(interfaceRef);
+    }
 
     public List<MethodInfo> getMethodInfoList() {
         return methodInfoList;
@@ -103,6 +136,14 @@ public class ClassFile {
 
     public void setAttributes(Attributes attributes) {
         this.attributes = attributes;
+    }
+
+    public void dumpInterfaces() {
+        System.out.println("dumpInterfaces");
+
+        for (int nameIndex : interfaceList) {
+            System.out.println("Implements interface:" + constantPool.toString(nameIndex));
+        }
     }
 
     public void dumpMethods() {
