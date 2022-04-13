@@ -29,6 +29,19 @@ public class TestClass implements Runnable {
         }
     }
 
+    public static synchronized final void lotsOfModifiers()
+    {
+
+    }
+
+    public void methodWithParameters(int i, float f, long l, String s) {
+        System.out.println("i:" + i);
+        System.out.println("f:" + f);
+        System.out.println("l:" + l);
+        System.out.println("s:" + s);
+    }
+
+
     @java.lang.Deprecated
     public void deprecatedMethod() {
         System.out.println("foo");

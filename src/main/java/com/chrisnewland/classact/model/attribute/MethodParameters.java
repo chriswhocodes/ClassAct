@@ -2,6 +2,8 @@ package com.chrisnewland.classact.model.attribute;
 
 import com.chrisnewland.classact.model.AttributeType;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
+import com.chrisnewland.classact.model.modifier.MethodParametersAccess;
+import com.chrisnewland.classact.model.modifier.Modifier;
 
 public class MethodParameters implements Attribute {
     private MethodParametersEntry[] entries;
@@ -26,7 +28,7 @@ public class MethodParameters implements Attribute {
                 .append("\n");
 
         for (MethodParametersEntry entry : entries) {
-            builder.append(String.format("%10s%10d", constantPool.toString(entry.getNameIndex()), entry.getAccessFlags()))
+            builder.append(String.format("%10s%10d", constantPool.toString(entry.getNameIndex()), Modifier.getAccessString(MethodParametersAccess.values(), entry.getAccessFlags())))
                     .append("\n");
         }
 

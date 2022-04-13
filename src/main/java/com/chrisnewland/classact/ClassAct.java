@@ -4,9 +4,13 @@ import com.chrisnewland.classact.model.*;
 import com.chrisnewland.classact.model.attribute.*;
 import com.chrisnewland.classact.model.attribute.Deprecated;
 import com.chrisnewland.classact.model.attribute.annotations.*;
+import com.chrisnewland.classact.model.attribute.module.*;
+import com.chrisnewland.classact.model.attribute.module.Module;
 import com.chrisnewland.classact.model.constantpool.ConstantPool;
 import com.chrisnewland.classact.model.constantpool.ConstantPoolType;
 import com.chrisnewland.classact.model.constantpool.entry.*;
+import com.chrisnewland.classact.model.modifier.MethodAccess;
+import com.chrisnewland.classact.model.modifier.Modifier;
 
 import java.io.*;
 
@@ -106,8 +110,7 @@ public class ClassAct {
 
         System.out.println(classFile.getConstantPool());
 
-        System.out.println(classFile.getAttributes()
-                .toString(classFile.getConstantPool()));
+        System.out.println(classFile.getAttributes().toString(classFile.getConstantPool()));
     }
 
     public ClassFile getClassFile() {
@@ -128,8 +131,7 @@ public class ClassAct {
 
             currentPoolIndex = i + 1;
 
-            ConstantPoolType tag = ConstantPoolType.valueOf(tagByte)
-                    .get();
+            ConstantPoolType tag = ConstantPoolType.valueOf(tagByte).get();
 
             debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
 
@@ -198,8 +200,7 @@ public class ClassAct {
 
         EntryClass entryClass = new EntryClass(nameIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryClass);
+        classFile.getConstantPool().set(currentPoolIndex, entryClass);
     }
 
     private void processConstantMethodRef(DataInputStream dis) throws IOException {
@@ -213,8 +214,7 @@ public class ClassAct {
 
         EntryMethodRef entryMethodRef = new EntryMethodRef(classIndex, nameAndTypeIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryMethodRef);
+        classFile.getConstantPool().set(currentPoolIndex, entryMethodRef);
     }
 
     private void processConstantMethodHandle(DataInputStream dis) throws IOException {
@@ -228,8 +228,7 @@ public class ClassAct {
 
         EntryMethodHandle entryMethodHandle = new EntryMethodHandle(referenceKind, referenceIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryMethodHandle);
+        classFile.getConstantPool().set(currentPoolIndex, entryMethodHandle);
     }
 
     private void processConstantMethodType(DataInputStream dis) throws IOException {
@@ -239,8 +238,7 @@ public class ClassAct {
 
         EntryMethodType entryMethodType = new EntryMethodType(descriptorIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryMethodType);
+        classFile.getConstantPool().set(currentPoolIndex, entryMethodType);
     }
 
     private void processConstantDynamic(DataInputStream dis) throws IOException {
@@ -254,8 +252,7 @@ public class ClassAct {
 
         EntryDynamic entryDynamic = new EntryDynamic(bootstrapMethodAttrIndex, nameAndTypeIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryDynamic);
+        classFile.getConstantPool().set(currentPoolIndex, entryDynamic);
     }
 
     private void processConstantInvokeDynamic(DataInputStream dis) throws IOException {
@@ -269,8 +266,7 @@ public class ClassAct {
 
         EntryInvokeDynamic entryInvokeDynamic = new EntryInvokeDynamic(bootstrapMethodAttrIndex, nameAndTypeIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryInvokeDynamic);
+        classFile.getConstantPool().set(currentPoolIndex, entryInvokeDynamic);
     }
 
     private void processConstantModule(DataInputStream dis) throws IOException {
@@ -280,8 +276,7 @@ public class ClassAct {
 
         EntryModule entryModule = new EntryModule(nameIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryModule);
+        classFile.getConstantPool().set(currentPoolIndex, entryModule);
     }
 
     private void processConstantPackage(DataInputStream dis) throws IOException {
@@ -291,8 +286,7 @@ public class ClassAct {
 
         EntryPackage entryPackage = new EntryPackage(nameIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryPackage);
+        classFile.getConstantPool().set(currentPoolIndex, entryPackage);
     }
 
     private void processConstantInterfaceMethodRef(DataInputStream dis) throws IOException {
@@ -306,8 +300,7 @@ public class ClassAct {
 
         EntryInterfaceMethodRef entryInterfaceMethodRef = new EntryInterfaceMethodRef(classIndex, nameAndTypeIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryInterfaceMethodRef);
+        classFile.getConstantPool().set(currentPoolIndex, entryInterfaceMethodRef);
     }
 
     private void processConstantFieldRef(DataInputStream dis) throws IOException {
@@ -321,8 +314,7 @@ public class ClassAct {
 
         EntryFieldRef entryFieldRef = new EntryFieldRef(classIndex, nameAndTypeIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryFieldRef);
+        classFile.getConstantPool().set(currentPoolIndex, entryFieldRef);
     }
 
     private void processConstantString(DataInputStream dis) throws IOException {
@@ -332,8 +324,7 @@ public class ClassAct {
 
         EntryString entryString = new EntryString(stringIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryString);
+        classFile.getConstantPool().set(currentPoolIndex, entryString);
     }
 
     private void processConstantInteger(DataInputStream dis) throws IOException {
@@ -343,8 +334,7 @@ public class ClassAct {
 
         EntryInteger entryInteger = new EntryInteger(value);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryInteger);
+        classFile.getConstantPool().set(currentPoolIndex, entryInteger);
     }
 
     private void processConstantFloat(DataInputStream dis) throws IOException {
@@ -354,8 +344,7 @@ public class ClassAct {
 
         EntryFloat entryFloat = new EntryFloat(bits);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryFloat);
+        classFile.getConstantPool().set(currentPoolIndex, entryFloat);
     }
 
     private void processConstantLong(DataInputStream dis) throws IOException {
@@ -371,8 +360,7 @@ public class ClassAct {
 
         EntryLong entryLong = new EntryLong(value);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryLong);
+        classFile.getConstantPool().set(currentPoolIndex, entryLong);
     }
 
     private void processConstantDouble(DataInputStream dis) throws IOException {
@@ -388,8 +376,7 @@ public class ClassAct {
 
         EntryDouble entryDouble = new EntryDouble(bits);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryDouble);
+        classFile.getConstantPool().set(currentPoolIndex, entryDouble);
     }
 
     private void processConstantUTF8(DataInputStream dis) throws IOException {
@@ -407,8 +394,7 @@ public class ClassAct {
 
         EntryUTF8 entryUTF8 = new EntryUTF8(utf8String);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryUTF8);
+        classFile.getConstantPool().set(currentPoolIndex, entryUTF8);
     }
 
     private void processConstantNameAndType(DataInputStream dis) throws IOException {
@@ -422,8 +408,7 @@ public class ClassAct {
 
         EntryNameAndType entryNameAndType = new EntryNameAndType(nameIndex, descriptorIndex);
 
-        classFile.getConstantPool()
-                .set(currentPoolIndex, entryNameAndType);
+        classFile.getConstantPool().set(currentPoolIndex, entryNameAndType);
     }
 
     private void processInterfaces(int interfacesCount) throws IOException {
@@ -484,10 +469,7 @@ public class ClassAct {
 
             debug("processMethods[" + i + "] attributesCount " + attributesCount);
 
-            info("METHOD: " + MethodAccessFlag.getFlagsString(accessFlags) + " " + classFile.getConstantPool()
-                    .toString(nameIndex) + " "
-                    + classFile.getConstantPool()
-                    .toString(descriptorIndex));
+            info("METHOD: " + Modifier.getAccessString(MethodAccess.values(), accessFlags) + " " + classFile.getConstantPool().toString(nameIndex) + " " + classFile.getConstantPool().toString(descriptorIndex));
 
             MethodInfo methodInfo = new MethodInfo(accessFlags, nameIndex, descriptorIndex);
 
@@ -511,8 +493,7 @@ public class ClassAct {
 
             debug("processAttributes[" + i + "] attributeLength " + attributeLength);
 
-            String attributeName = classFile.getConstantPool()
-                    .toString(attributeNameIndex);
+            String attributeName = classFile.getConstantPool().toString(attributeNameIndex);
 
             debug("processAttributes attributeName: " + attributeName);
 
@@ -586,6 +567,18 @@ public class ClassAct {
             case MethodParameters:
                 return processMethodParameters(dis);
 
+            case Module:
+                return processModule(dis);
+
+            case ModulePackages:
+                return processModulePackages(dis);
+
+            case ModuleMainClass:
+                return processModuleMainClass(dis);
+
+            case NestHost:
+                return processNestHost(dis);
+
             // skips the correct number of bytes
             default:
                 System.out.println("unhandled: " + attributeType);
@@ -595,16 +588,10 @@ public class ClassAct {
 
             //TODO implement these!
 
-            //		case StackMapTable: // used for bytecode verification
-            //			break;
-
+            //	 StackMapTable: // used for bytecode verification
             //		RuntimeVisibleTypeAnnotations, // woo, complex!
             //		RuntimeInvisibleTypeAnnotations, // woo, complex!
-            //		,
-            //		Module,
-            //		ModulePackages,
-            //		ModuleMainClass,
-            //		NestHost,
+
             //		NestMembers,
             //		Record,
             //		PermittedSubclasses
@@ -658,8 +645,7 @@ public class ClassAct {
         while (currentMethodBCI < codeLength) {
             int opcode = dis.readUnsignedByte();
 
-            Instruction instruction = Instruction.forOpcode(opcode)
-                    .get();
+            Instruction instruction = Instruction.forOpcode(opcode).get();
 
             info("processCode opcode at BCI [" + currentMethodBCI + "] " + opcode + " (" + instruction + ")");
 
@@ -784,8 +770,7 @@ public class ClassAct {
         int defaultValue = (defaultByte1 << 24) | (defaultByte2 << 16) | (defaultByte3 << 8) | defaultByte4;
         defaultValue += baseBCI;
 
-        debug("processLookupSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
-                + " base: " + baseBCI + " = " + defaultValue);
+        debug("processLookupSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4 + " base: " + baseBCI + " = " + defaultValue);
 
         operandData.put(-1, defaultValue);
 
@@ -815,8 +800,7 @@ public class ClassAct {
             int offset = (offsetByte1 << 24) | (offsetByte2 << 16) | (offsetByte3 << 8) | offsetByte4;
             offset += baseBCI;
 
-            debug("processLookupSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
-                    + " base: " + baseBCI + " = " + offset);
+            debug("processLookupSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4 + " base: " + baseBCI + " = " + offset);
 
             debug("processLookupSwitch pair[" + p + "] match: " + match + " offset: " + offset);
 
@@ -847,8 +831,7 @@ public class ClassAct {
         int defaultValue = (defaultByte1 << 24) | (defaultByte2 << 16) | (defaultByte3 << 8) | defaultByte4;
         defaultValue += baseBCI;
 
-        debug("processTableSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4
-                + " base: " + baseBCI + " = " + defaultValue);
+        debug("processTableSwitch defaultBytes: " + defaultByte1 + ", " + defaultByte2 + ", " + defaultByte3 + ", " + defaultByte4 + " base: " + baseBCI + " = " + defaultValue);
 
         operandData.put(-1, defaultValue);
 
@@ -872,8 +855,7 @@ public class ClassAct {
 
         int high = (highByte1 << 24) | (highByte2 << 16) | (highByte3 << 8) | highByte4;
 
-        debug("processTableSwitch highBytes   : " + highByte1 + ", " + highByte2 + ", " + highByte3 + ", " + highByte4 + " = "
-                + high);
+        debug("processTableSwitch highBytes   : " + highByte1 + ", " + highByte2 + ", " + highByte3 + ", " + highByte4 + " = " + high);
 
         int offsetCount = high - low + 1;
 
@@ -888,8 +870,7 @@ public class ClassAct {
             int offset = (offsetByte1 << 24) | (offsetByte2 << 16) | (offsetByte3 << 8) | offsetByte4;
             offset += baseBCI;
 
-            debug("processTableSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4
-                    + " base:" + baseBCI + " = " + offset);
+            debug("processTableSwitch offset      : " + offsetByte1 + ", " + offsetByte2 + ", " + offsetByte3 + ", " + offsetByte4 + " base:" + baseBCI + " = " + offset);
 
             operandData.put(low + off, offset);
         }
@@ -1161,11 +1142,112 @@ public class ClassAct {
         return methodParameters;
     }
 
+    private Module processModule(DataInputStream dis) throws IOException {
+        int module_name_index = dis.readUnsignedShort();
+        int module_flags = dis.readUnsignedShort();
+        int module_version_index = dis.readUnsignedShort();
+
+        int requires_count = dis.readUnsignedShort();
+
+        Requires[] requires = new Requires[requires_count];
+
+        for (int r = 0; r < requires_count; r++) {
+            int requires_index = dis.readUnsignedShort();
+            int requires_flags = dis.readUnsignedShort();
+            int requires_version_index = dis.readUnsignedShort();
+
+            requires[r] = new Requires(requires_index, requires_flags, requires_version_index);
+        }
+
+        int exports_count = dis.readUnsignedShort();
+
+        Exports[] exports = new Exports[exports_count];
+
+        for (int e = 0; e < exports_count; e++) {
+            int exports_index = dis.readUnsignedShort();
+            int exports_flags = dis.readUnsignedShort();
+            int exports_to_count = dis.readUnsignedShort();
+
+            int[] exports_to_index = new int[exports_to_count];
+
+            for (int ei = 0; ei < exports_to_count; ei++) {
+                exports_to_index[ei] = dis.readUnsignedShort();
+            }
+
+            exports[e] = new Exports(exports_index, exports_flags, exports_to_index);
+        }
+
+        int opens_count = dis.readUnsignedShort();
+
+        Opens[] opens = new Opens[opens_count];
+
+        for (int o = 0; o < opens_count; o++) {
+            int opens_index = dis.readUnsignedShort();
+            int opens_flags = dis.readUnsignedShort();
+            int opens_to_count = dis.readUnsignedShort();
+            int[] opens_to_index = new int[opens_to_count];
+
+            for (int oi = 0; oi < opens_to_count; oi++) {
+                opens_to_index[oi] = dis.readUnsignedShort();
+            }
+
+            opens[o] = new Opens(opens_index, opens_flags, opens_to_index);
+        }
+
+        int uses_count = dis.readUnsignedShort();
+        int[] uses_index = new int[uses_count];
+
+        for (int u = 0; u < uses_count; u++) {
+            uses_index[u] = dis.readUnsignedShort();
+        }
+
+        int provides_count = dis.readUnsignedShort();
+
+        Provides[] provides = new Provides[provides_count];
+
+        for (int p = 0; p < provides_count; p++) {
+            int provides_index = dis.readUnsignedShort();
+            int provides_with_count = dis.readUnsignedShort();
+            int[] provides_with_index = new int[provides_with_count];
+
+            for (int pi = 0; pi < provides_with_count; pi++) {
+                provides_with_index[pi] = dis.readUnsignedShort();
+            }
+
+            provides[p] = new Provides(provides_index, provides_with_index);
+        }
+
+        return new Module(module_name_index, module_flags, module_version_index, requires, exports, uses_index, provides);
+    }
+
+    private ModulePackages processModulePackages(DataInputStream dis) throws IOException {
+        int package_count = dis.readUnsignedShort();
+
+        int[] package_index = new int[package_count];
+
+        for (int i = 0; i < package_count; i++) {
+            package_index[i] = dis.readUnsignedShort();
+        }
+
+        return new ModulePackages(package_index);
+    }
+
+    private ModuleMainClass processModuleMainClass(DataInputStream dis) throws IOException {
+        int main_class_index = dis.readUnsignedShort();
+
+        return new ModuleMainClass(main_class_index);
+    }
+
+    private NestHost processNestHost(DataInputStream dis) throws IOException {
+        int host_class_index = dis.readUnsignedShort();
+
+        return new NestHost(host_class_index);
+    }
+
     private RuntimeVisibleParameterAnnotations processRuntimeVisibleParameterAnnotations(DataInputStream dis) throws IOException {
         int numParameters = dis.readUnsignedByte();
 
-        RuntimeVisibleParameterAnnotations runtimeVisibleParameterAnnotations = new RuntimeVisibleParameterAnnotations(
-                numParameters);
+        RuntimeVisibleParameterAnnotations runtimeVisibleParameterAnnotations = new RuntimeVisibleParameterAnnotations(numParameters);
 
         for (int i = 0; i < numParameters; i++) {
             runtimeVisibleParameterAnnotations.set(i, processParameterAnnotation(dis));
@@ -1177,8 +1259,7 @@ public class ClassAct {
     private RuntimeInvisibleParameterAnnotations processRuntimeInvisibleParameterAnnotations(DataInputStream dis) throws IOException {
         int numParameters = dis.readUnsignedByte();
 
-        RuntimeInvisibleParameterAnnotations runtimeInvisibleParameterAnnotations = new RuntimeInvisibleParameterAnnotations(
-                numParameters);
+        RuntimeInvisibleParameterAnnotations runtimeInvisibleParameterAnnotations = new RuntimeInvisibleParameterAnnotations(numParameters);
 
         for (int i = 0; i < numParameters; i++) {
             runtimeInvisibleParameterAnnotations.set(i, processParameterAnnotation(dis));
@@ -1219,8 +1300,7 @@ public class ClassAct {
             debug("processInnerClasses inner_name_index        : " + inner_name_index);
             debug("processInnerClasses inner_class_access_flags: " + inner_class_access_flags);
 
-            innerClasses.set(inner, new InnerClassEntry(inner_class_info_index, outer_class_info_index, inner_name_index,
-                    inner_class_access_flags));
+            innerClasses.set(inner, new InnerClassEntry(inner_class_info_index, outer_class_info_index, inner_name_index, inner_class_access_flags));
         }
 
         return innerClasses;
