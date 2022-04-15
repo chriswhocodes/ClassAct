@@ -3,6 +3,7 @@ package com.chrisnewland.classact;
 import com.chrisnewland.classact.model.*;
 import com.chrisnewland.classact.model.attribute.*;
 import com.chrisnewland.classact.model.attribute.Deprecated;
+import com.chrisnewland.classact.model.attribute.Record;
 import com.chrisnewland.classact.model.attribute.annotations.*;
 import com.chrisnewland.classact.model.attribute.module.*;
 import com.chrisnewland.classact.model.attribute.module.Module;
@@ -579,6 +580,15 @@ public class ClassAct {
             case NestHost:
                 return processNestHost(dis);
 
+            case NestMembers:
+                return processNestMembers(dis);
+
+            case Record:
+                return processRecord(dis);
+
+            case PermittedSubclasses:
+                return processPermittedSubclasses(dis);
+
             // skips the correct number of bytes
             default:
                 System.out.println("unhandled: " + attributeType);
@@ -586,15 +596,10 @@ public class ClassAct {
                 dis.read(attributeInfo);
                 return null;
 
-            //TODO implement these!
-
-            //	 StackMapTable: // used for bytecode verification
-            //		RuntimeVisibleTypeAnnotations, // woo, complex!
-            //		RuntimeInvisibleTypeAnnotations, // woo, complex!
-
-            //		NestMembers,
-            //		Record,
-            //		PermittedSubclasses
+            //  TODO implement these!
+            //	StackMapTable: // used for bytecode verification
+            //	RuntimeVisibleTypeAnnotations, // woo, complex!
+            //	RuntimeInvisibleTypeAnnotations, // woo, complex!
         }
     }
 
@@ -1242,6 +1247,51 @@ public class ClassAct {
         int host_class_index = dis.readUnsignedShort();
 
         return new NestHost(host_class_index);
+    }
+
+    private NestMembers processNestMembers(DataInputStream dis) throws IOException {
+        int numClasses = dis.readUnsignedShort();
+
+        int[] classes = new int[numClasses];
+
+        for (int i = 0; i < numClasses; i++) {
+            classes[i] = dis.readUnsignedShort();
+        }
+
+        return new NestMembers(classes);
+    }
+
+    private Record processRecord(DataInputStream dis) throws IOException {
+        int numComponents = dis.readUnsignedShort();
+
+        Record record = new Record(numComponents);
+
+        for (int i = 0; i < numComponents; i++) {
+            int nameIndex = dis.readUnsignedShort();
+            int descriptorIndex = dis.readUnsignedShort();
+
+            int attributesCount = dis.readUnsignedShort();
+
+            Attributes attributes = new Attributes(attributesCount);
+
+            processAttributes(attributes, attributesCount);
+
+            record.set(i, new RecordComponentInfo(nameIndex, descriptorIndex, attributes));
+        }
+
+        return record;
+    }
+
+    private PermittedSubclasses processPermittedSubclasses(DataInputStream dis) throws IOException {
+        int numClasses = dis.readUnsignedShort();
+
+        int[] classes = new int[numClasses];
+
+        for (int i = 0; i < numClasses; i++) {
+            classes[i] = dis.readUnsignedShort();
+        }
+
+        return new PermittedSubclasses(classes);
     }
 
     private RuntimeVisibleParameterAnnotations processRuntimeVisibleParameterAnnotations(DataInputStream dis) throws IOException {
