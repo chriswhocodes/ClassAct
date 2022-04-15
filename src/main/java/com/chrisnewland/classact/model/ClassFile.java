@@ -158,21 +158,22 @@ public class ClassFile {
             Code code = (Code) methodInfo.getAttributes()
                     .findAttribute(AttributeType.Code);
 
-            List<BytecodeLine> bytecodeLines = code.getBytecodeLines();
+            if (code != null) {
+                List<BytecodeLine> bytecodeLines = code.getBytecodeLines();
 
-            System.out.println("Bytecode:");
+                System.out.println("Bytecode:");
 
-            for (BytecodeLine line : bytecodeLines) {
-                Instruction instruction = line.getInstruction();
-                System.out.println(line.getBci() + " : " + instruction + " " + line.getOperandData()
-                        .toString(line, constantPool));
+                for (BytecodeLine line : bytecodeLines) {
+                    Instruction instruction = line.getInstruction();
+                    System.out.println(line.getBci() + " : " + instruction + " " + line.getOperandData()
+                            .toString(line, constantPool));
+                }
             }
 
             System.out.println(methodInfo.getAttributes()
                     .toString(constantPool));
         }
     }
-
 
     public void dumpFields() {
         System.out.println("dumpFields");

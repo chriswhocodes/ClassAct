@@ -1,6 +1,8 @@
 package com.chrisnewland.classact.model.constantpool;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public enum ConstantPoolType {
@@ -22,13 +24,34 @@ public enum ConstantPoolType {
     CONSTANT_Module(19),
     CONSTANT_Package(20);
 
+    private static ConstantPoolType[] lookup = null;
+
     private final int value;
 
     ConstantPoolType(int value) {
         this.value = value;
     }
 
-    public static Optional<ConstantPoolType> valueOf(int value) {
-        return Arrays.stream(values()).filter(cp -> cp.value == value).findFirst();
+    public static ConstantPoolType valueOf(int value) {
+
+        if (lookup == null) {
+            lookup = new ConstantPoolType[20+1];
+
+            for (ConstantPoolType constantPoolType : values()) {
+                lookup[constantPoolType.value] = constantPoolType;
+            }
+        }
+
+        if (value >= lookup.length) {
+            throw new RuntimeException("No such ConstantPoolType " + value);
+        }
+
+        ConstantPoolType result = lookup[value];
+
+        if (result == null) {
+            throw new RuntimeException("No such ConstantPoolType " + value);
+        }
+
+        return result;
     }
 }

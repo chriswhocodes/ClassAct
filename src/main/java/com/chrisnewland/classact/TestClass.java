@@ -3,6 +3,7 @@ package com.chrisnewland.classact;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,9 +30,11 @@ public class TestClass implements Runnable {
         }
     }
 
-    public static synchronized final void lotsOfModifiers()
-    {
+    public static synchronized final void lotsOfModifiers() {
 
+    }
+
+    public record Person(String firstName, String lastName, LocalDate dateOfBirth) {
     }
 
     public void methodWithParameters(int i, float f, long l, String s) {
@@ -40,7 +43,6 @@ public class TestClass implements Runnable {
         System.out.println("l:" + l);
         System.out.println("s:" + s);
     }
-
 
     @java.lang.Deprecated
     public void deprecatedMethod() {

@@ -28,7 +28,7 @@ public class MethodParameters implements Attribute {
                 .append("\n");
 
         for (MethodParametersEntry entry : entries) {
-            builder.append(String.format("%10s%10d", constantPool.toString(entry.getNameIndex()), Modifier.getAccessString(MethodParametersAccess.values(), entry.getAccessFlags())))
+            builder.append(String.format("%10s%10s", constantPool.toString(entry.getNameIndex()), Modifier.getAccessString(MethodParametersAccess.values(), entry.getAccessFlags())))
                     .append("\n");
         }
 

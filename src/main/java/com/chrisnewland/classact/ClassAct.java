@@ -132,7 +132,7 @@ public class ClassAct {
 
             currentPoolIndex = i + 1;
 
-            ConstantPoolType tag = ConstantPoolType.valueOf(tagByte).get();
+            ConstantPoolType tag = ConstantPoolType.valueOf(tagByte);
 
             debug("Constant[" + currentPoolIndex + "] tagByte " + tagByte + " tag " + tag);
 
@@ -219,7 +219,7 @@ public class ClassAct {
     }
 
     private void processConstantMethodHandle(DataInputStream dis) throws IOException {
-        int referenceKind = dis.readUnsignedShort();
+        int referenceKind = dis.readUnsignedByte();
 
         debug("processConstantMethodHandle referenceKind " + referenceKind);
 
@@ -1128,7 +1128,7 @@ public class ClassAct {
     }
 
     private MethodParameters processMethodParameters(DataInputStream dis) throws IOException {
-        int parameters_count = dis.readUnsignedShort();
+        int parameters_count = dis.readUnsignedByte();
 
         debug("processMethodParameters parameters_count: " + parameters_count);
 
