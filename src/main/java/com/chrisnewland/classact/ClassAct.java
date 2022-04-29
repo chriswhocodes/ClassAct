@@ -36,7 +36,21 @@ public class ClassAct {
         for (int i = 0; i < count; i++) {
             long start = System.nanoTime();
 
-            new ClassAct(classFile);
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(classFile));
+
+            ClassAct classAct = new ClassAct(inputStream);
+
+            ClassFile result = classAct.getClassFile();
+
+            result.dumpInterfaces();
+
+            result.dumpFields();
+
+            result.dumpMethods();
+
+            System.out.println(result.getConstantPool());
+
+            System.out.println(result.getAttributes().toString(result.getConstantPool()));
 
             long stop = System.nanoTime();
 
@@ -46,10 +60,10 @@ public class ClassAct {
         }
     }
 
-    public ClassAct(File classFileName) throws Exception {
+    public ClassAct(InputStream inputStream) throws Exception {
         classFile = new ClassFile();
 
-        dis = new DataInputStream(new BufferedInputStream(new FileInputStream(classFileName)));
+        dis = new DataInputStream(inputStream);
 
         classFile.setMagicNumber(dis.readInt());
         classFile.setMinorVersion(dis.readUnsignedShort());
@@ -103,15 +117,7 @@ public class ClassAct {
 
         processAttributes(attributes, attributesCount);
 
-        classFile.dumpInterfaces();
-
-        classFile.dumpFields();
-
-        classFile.dumpMethods();
-
-        System.out.println(classFile.getConstantPool());
-
-        System.out.println(classFile.getAttributes().toString(classFile.getConstantPool()));
+        debug("done");
     }
 
     public ClassFile getClassFile() {
