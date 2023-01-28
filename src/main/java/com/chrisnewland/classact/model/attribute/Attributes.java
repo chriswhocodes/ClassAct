@@ -32,11 +32,9 @@ public class Attributes
 			{
 				if (attribute != null) // remove once all attributes are handled
 				{
-					builder.append(attribute.getType())
-						   .append(":\n");
+					builder.append(attribute.getType()).append(":\n");
 
-					builder.append(attribute.toString(constantPool))
-						   .append("\n");
+					builder.append(attribute.toString(constantPool)).append("\n");
 				}
 			}
 		}
@@ -50,9 +48,12 @@ public class Attributes
 
 		for (Attribute attribute : attributes)
 		{
-			if (attribute.getType() == type)
+			if (attribute != null) // remove once all attributes are handled
 			{
-				result = attribute;
+				if (attribute.getType() == type)
+				{
+					result = attribute;
+				}
 			}
 		}
 
