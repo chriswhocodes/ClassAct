@@ -12,27 +12,24 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 	{
 		StringBuilder builder = new StringBuilder();
 
-		String decodeExtraBytes = bytecodeLine.getInstruction()
-											  .getDecodeExtraBytes();
+		String decodeExtraBytes = bytecodeLine.getInstruction().getDecodeExtraBytes();
 
 		int byteIndex = 0;
+
+		builder.append(Arrays.toString(this.toArray())).append("\n");
 
 		for (int i = 0; i < decodeExtraBytes.length(); i++)
 		{
 			char c = decodeExtraBytes.charAt(i);
 
-			builder.append(Arrays.toString(this.toArray()))
-				   .append(" > ");
-			builder.append(c)
-				   .append(" > ");
+			builder.append(c).append(" > ");
 
 			switch (c)
 			{
 			case 'L': // local slot (1 byte)
 			{
 				int signedByte1 = get(byteIndex);
-				builder.append("local slot ")
-					   .append(signedByte1);
+				builder.append("local slot ").append(signedByte1);
 				byteIndex++;
 			}
 			break;
@@ -40,10 +37,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 			{
 				int signedByte1 = get(byteIndex);
 
-				builder.append("constant pool ")
-					   .append(signedByte1)
-					   .append(" = ")
-					   .append(constantPool.toString(signedByte1));
+				builder.append("constant pool #").append(signedByte1).append(" // ").append(constantPool.toString(signedByte1));
 				byteIndex++;
 			}
 			break;
@@ -53,20 +47,15 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				int signedByte2 = get(byteIndex + 1);
 				int index = (signedByte1 << 8) + signedByte2;
 
-				builder.append("constant pool ")
-					   .append(index)
-					   .append(" = ")
-					   .append(constantPool.getClass(index))
-					   .append(' ')
-					   .append(constantPool.toString(index));
+				builder.append("constant pool ").append(index).append(" // ").append(constantPool.getClass(index)).append(' ')
+						.append(constantPool.toString(index));
 				byteIndex += 2;
 			}
 			break;
 			case 'B': // immediate (1 byte)
 			{
 				int signedByte1 = get(byteIndex);
-				builder.append("immediate ")
-					   .append(signedByte1);
+				builder.append("immediate ").append(signedByte1);
 				byteIndex++;
 			}
 			break;
@@ -75,8 +64,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				int signedByte1 = get(byteIndex);
 				int signedByte2 = get(byteIndex + 1);
 				int index = (signedByte1 << 8) + signedByte2;
-				builder.append("immediate ")
-					   .append(index);
+				builder.append("immediate ").append(index);
 				byteIndex += 2;
 			}
 			break;
@@ -90,8 +78,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 
 				index = (bci + (short) index);
 
-				builder.append("bci ")
-					   .append(index);
+				builder.append("bci ").append(index);
 				byteIndex += 2;
 			}
 			break;
@@ -107,8 +94,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 
 				index = (bci + (short) index);
 
-				builder.append("bci ")
-					   .append(index);
+				builder.append("bci ").append(index);
 				byteIndex += 4;
 			}
 			break;
@@ -116,12 +102,12 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				break;
 			}
 
-			builder.append(", ");
+			builder.append("\n");
 		}
 
 		if (builder.length() > 0)
 		{
-			builder.delete(builder.length() - 2, builder.length() - 1);
+			builder.deleteCharAt(builder.length() - 1);
 		}
 
 		return builder.toString();
