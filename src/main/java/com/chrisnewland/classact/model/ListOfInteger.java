@@ -4,9 +4,46 @@ import com.chrisnewland.classact.model.constantpool.ConstantPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class ListOfInteger extends ArrayList<Integer> implements OperandData
 {
+
+	public List<Integer> getConstantPoolIndices(BytecodeLine bytecodeLine)
+	{
+		List<Integer> result = new ArrayList<>();
+
+		String decodeExtraBytes = bytecodeLine.getInstruction().getDecodeExtraBytes();
+
+		int byteIndex = 0;
+
+		for (int i = 0; i < decodeExtraBytes.length(); i++)
+		{
+			switch (decodeExtraBytes.charAt(i))
+			{
+			case 'c': // constant pool (1 byte)
+			{
+				int signedByte1 = get(byteIndex);
+				result.add(signedByte1);
+				byteIndex++;
+			}
+			break;
+			case 'C': // constant pool (2 bytes)
+			{
+				int signedByte1 = get(byteIndex);
+				int signedByte2 = get(byteIndex + 1);
+				int index = (signedByte1 << 8) + signedByte2;
+
+				result.add(index);
+				byteIndex += 2;
+			}
+			break;
+			}
+		}
+
+		return result;
+	}
+
 	@Override
 	public String toString(BytecodeLine bytecodeLine, ConstantPool constantPool)
 	{
@@ -47,8 +84,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				int signedByte2 = get(byteIndex + 1);
 				int index = (signedByte1 << 8) + signedByte2;
 
-				builder.append("constant pool ").append(index).append(" // ").append(constantPool.getClass(index)).append(' ')
-						.append(constantPool.toString(index));
+				builder.append("constant pool ").append(index).append(" // ").append(constantPool.toString(index));
 				byteIndex += 2;
 			}
 			break;
