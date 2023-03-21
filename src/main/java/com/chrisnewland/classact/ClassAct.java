@@ -67,7 +67,7 @@ public class ClassAct {
 
         classFile.setMagicNumber(dis.readInt());
         classFile.setMinorVersion(dis.readUnsignedShort());
-        classFile.setMinorVersion(dis.readUnsignedShort());
+        classFile.setMajorVersion(dis.readUnsignedShort());
 
         int constantPoolCount = dis.readUnsignedShort();
 
@@ -78,6 +78,7 @@ public class ClassAct {
         processConstantPool(constantPoolCount);
 
         int accessFlags = dis.readUnsignedShort();
+        classFile.setAccessFlags(accessFlags);
 
         debug("accessFlags: " + Integer.toBinaryString(accessFlags));
 

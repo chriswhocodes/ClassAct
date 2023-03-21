@@ -53,13 +53,13 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 
 		int byteIndex = 0;
 
-		builder.append(Arrays.toString(this.toArray())).append("\n");
+		//builder.append(Arrays.toString(this.toArray())).append("\n");
 
 		for (int i = 0; i < decodeExtraBytes.length(); i++)
 		{
 			char c = decodeExtraBytes.charAt(i);
 
-			builder.append(c).append(" > ");
+			//builder.append(c).append(" > ");
 
 			switch (c)
 			{
@@ -82,16 +82,16 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 			{
 				int signedByte1 = get(byteIndex);
 				int signedByte2 = get(byteIndex + 1);
-				int index = (signedByte1 << 8) + signedByte2;
+				int index = (signedByte1 << 8) | signedByte2;
 
-				builder.append("constant pool ").append(index).append(" // ").append(constantPool.toString(index));
+				builder.append("constant pool #").append(index).append(" // ").append(constantPool.toString(index));
 				byteIndex += 2;
 			}
 			break;
 			case 'B': // immediate (1 byte)
 			{
 				int signedByte1 = get(byteIndex);
-				builder.append("immediate ").append(signedByte1);
+				builder.append("immediate ").append(signedByte1 & 0xff);
 				byteIndex++;
 			}
 			break;
@@ -100,7 +100,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				int signedByte1 = get(byteIndex);
 				int signedByte2 = get(byteIndex + 1);
 				int index = (signedByte1 << 8) + signedByte2;
-				builder.append("immediate ").append(index);
+				builder.append("immediate ").append(index & 0xffff);
 				byteIndex += 2;
 			}
 			break;
@@ -112,7 +112,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				int signedByte2 = get(byteIndex + 1);
 				int index = (signedByte1 << 8) | signedByte2;
 
-				index = (bci + (short) index);
+				index = (bci + (short) (index & 0xffff));
 
 				builder.append("bci ").append(index);
 				byteIndex += 2;
@@ -128,7 +128,7 @@ public class ListOfInteger extends ArrayList<Integer> implements OperandData
 				int signedByte4 = get(byteIndex + 3);
 				int index = (signedByte1 << 24) + (signedByte2 << 16) + (signedByte3 << 8) + signedByte4;
 
-				index = (bci + (short) index);
+				index = (bci + (index & 0xffffffff));
 
 				builder.append("bci ").append(index);
 				byteIndex += 4;
