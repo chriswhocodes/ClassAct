@@ -34,8 +34,8 @@ public class TestClass implements Runnable {
 
     }
 
-    public record Person(String firstName, String lastName, LocalDate dateOfBirth) {
-    }
+//    public record Person(String firstName, String lastName, LocalDate dateOfBirth) {
+//    }
 
     public void methodWithParameters(int i, float f, long l, String s) {
         System.out.println("i:" + i);
