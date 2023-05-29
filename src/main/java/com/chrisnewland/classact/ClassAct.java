@@ -15,9 +15,9 @@ import com.chrisnewland.classact.model.modifier.Modifier;
 
 import java.io.*;
 
-// https://docs.oracle.com/javase/specs/jvms/se18/html/jvms-4.html
+// https://docs.oracle.com/javase/specs/jvms/se20/html/jvms-4.html
 
-// https://docs.oracle.com/javase/specs/jvms/se18/html/jvms-6.html#jvms-6.5
+// https://docs.oracle.com/javase/specs/jvms/se20/html/jvms-6.html#jvms-6.5
 
 public class ClassAct {
     private DataInputStream dis;
@@ -86,9 +86,13 @@ public class ClassAct {
 
         debug("thisClass: " + thisClass);
 
+        classFile.setThisClass(thisClass);
+
         int superClass = dis.readUnsignedShort();
 
         debug("superClass: " + superClass);
+
+        classFile.setSuperClass(superClass);
 
         int interfacesCount = dis.readUnsignedShort();
 
