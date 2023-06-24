@@ -8,18 +8,18 @@ public enum Instruction {
     AASTORE(83),
     ACONST_NULL(1),
     ALOAD(25, 1, "L"),
-    ALOAD_0(42),
-    ALOAD_1(43),
-    ALOAD_2(44),
-    ALOAD_3(45),
+    ALOAD_0(42, "aload_n"),
+    ALOAD_1(43,"aload_n"),
+    ALOAD_2(44,"aload_n"),
+    ALOAD_3(45,"aload_n"),
     ANEWARRAY(189, 2, "C"),
     ARETURN(176),
     ARRAYLENGTH(190),
     ASTORE(58, 1, "L"),
-    ASTORE_0(75),
-    ASTORE_1(76),
-    ASTORE_2(77),
-    ASTORE_3(78),
+    ASTORE_0(75, "astore_n"),
+    ASTORE_1(76, "astore_n"),
+    ASTORE_2(77, "astore_n"),
+    ASTORE_3(78, "astore_n"),
     ATHROW(191),
     BALOAD(51),
     BASTORE(84),
@@ -35,23 +35,23 @@ public enum Instruction {
     DASTORE(82),
     DCMPG(152),
     DCMPL(151),
-    DCONST_0(14),
-    DCONST_1(15),
+    DCONST_0(14, "dconst_d"),
+    DCONST_1(15, "dconst_d"),
     DDIV(111),
     DLOAD(24, 1, "L"),
-    DLOAD_0(38),
-    DLOAD_1(39),
-    DLOAD_2(40),
-    DLOAD_3(41),
+    DLOAD_0(38, "dload_n"),
+    DLOAD_1(39, "dload_n"),
+    DLOAD_2(40, "dload_n"),
+    DLOAD_3(41, "dload_n"),
     DMUL(107),
     DNEG(119),
     DREM(115),
     DRETURN(175),
     DSTORE(57, 1, "L"),
-    DSTORE_0(71),
-    DSTORE_1(72),
-    DSTORE_2(73),
-    DSTORE_3(74),
+    DSTORE_0(71, "dstore_n"),
+    DSTORE_1(72, "dstore_n"),
+    DSTORE_2(73, "dstore_n"),
+    DSTORE_3(74, "dstore_n"),
     DSUB(103),
     DUP(89),
     DUP_X1(90),
@@ -67,24 +67,24 @@ public enum Instruction {
     FASTORE(81),
     FCMPG(150),
     FCMPL(149),
-    FCONST_0(11),
-    FCONST_1(12),
-    FCONST_2(13),
+    FCONST_0(11, "fconst_f"),
+    FCONST_1(12, "fconst_f"),
+    FCONST_2(13, "fconst_f"),
     FDIV(110),
     FLOAD(23, 1, "L"),
-    FLOAD_0(34),
-    FLOAD_1(35),
-    FLOAD_2(36),
-    FLOAD_3(37),
+    FLOAD_0(34,"fload_n"),
+    FLOAD_1(35,"fload_n"),
+    FLOAD_2(36,"fload_n"),
+    FLOAD_3(37,"fload_n"),
     FMUL(106),
     FNEG(118),
     FREM(114),
     FRETURN(174),
     FSTORE(56, 1, "L"),
-    FSTORE_0(67),
-    FSTORE_1(68),
-    FSTORE_2(69),
-    FSTORE_3(70),
+    FSTORE_0(67, "fstore_n"),
+    FSTORE_1(68, "fstore_n"),
+    FSTORE_2(69, "fstore_n"),
+    FSTORE_3(70, "fstore_n"),
     FSUB(102),
     GETFIELD(180, 2, "C"),
     GETSTATIC(178, 2, "C"),
@@ -100,36 +100,36 @@ public enum Instruction {
     IALOAD(46),
     IAND(126),
     IASTORE(79),
-    ICONST_M1(2),
-    ICONST_0(3),
-    ICONST_1(4),
-    ICONST_2(5),
-    ICONST_3(6),
-    ICONST_4(7),
-    ICONST_5(8),
+    ICONST_M1(2, "iconst_i"),
+    ICONST_0(3, "iconst_i"),
+    ICONST_1(4, "iconst_i"),
+    ICONST_2(5, "iconst_i"),
+    ICONST_3(6, "iconst_i"),
+    ICONST_4(7, "iconst_i"),
+    ICONST_5(8, "iconst_i"),
     IDIV(108),
-    IF_ACMPEQ(165, 2, "i"),
-    IF_ACMPNE(166, 2, "i"),
-    IF_ICMPEQ(159, 2, "i"),
-    IF_ICMPNE(160, 2, "i"),
-    IF_ICMPLT(161, 2, "i"),
-    IF_ICMPGE(162, 2, "i"),
-    IF_ICMPGT(163, 2, "i"),
-    IF_ICMPLE(164, 2, "i"),
-    IFEQ(153, 2, "i"),
-    IFNE(154, 2, "i"),
-    IFLT(155, 2, "i"),
-    IFGE(156, 2, "i"),
-    IFGT(157, 2, "i"),
-    IFLE(158, 2, "i"),
+    IF_ACMPEQ(165, 2, "i","if_acmp_cond"),
+    IF_ACMPNE(166, 2, "i","if_acmp_cond"),
+    IF_ICMPEQ(159, 2, "i", "if_icmp_cond"),
+    IF_ICMPNE(160, 2, "i", "if_icmp_cond"),
+    IF_ICMPLT(161, 2, "i", "if_icmp_cond"),
+    IF_ICMPGE(162, 2, "i", "if_icmp_cond"),
+    IF_ICMPGT(163, 2, "i", "if_icmp_cond"),
+    IF_ICMPLE(164, 2, "i", "if_icmp_cond"),
+    IFEQ(153, 2, "i","if_cond"),
+    IFNE(154, 2, "i","if_cond"),
+    IFLT(155, 2, "i","if_cond"),
+    IFGE(156, 2, "i","if_cond"),
+    IFGT(157, 2, "i","if_cond"),
+    IFLE(158, 2, "i","if_cond"),
     IFNONNULL(199, 2, "i"),
     IFNULL(198, 2, "i"),
     IINC(132, 2, "LB"),
     ILOAD(21, 1, "L"),
-    ILOAD_0(26),
-    ILOAD_1(27),
-    ILOAD_2(28),
-    ILOAD_3(29),
+    ILOAD_0(26, "iload_n"),
+    ILOAD_1(27, "iload_n"),
+    ILOAD_2(28, "iload_n"),
+    ILOAD_3(29, "iload_n"),
     IMUL(104),
     INEG(116),
     INSTANCEOF(193, 2, "C"),
@@ -144,10 +144,10 @@ public enum Instruction {
     ISHL(120),
     ISHR(122),
     ISTORE(54, 1, "L"),
-    ISTORE_0(59),
-    ISTORE_1(60),
-    ISTORE_2(61),
-    ISTORE_3(62),
+    ISTORE_0(59, "istore_n"),
+    ISTORE_1(60, "istore_n"),
+    ISTORE_2(61, "istore_n"),
+    ISTORE_3(62, "istore_n"),
     ISUB(100),
     IUSHR(124),
     IXOR(130),
@@ -161,17 +161,17 @@ public enum Instruction {
     LAND(127),
     LASTORE(80),
     LCMP(148),
-    LCONST_0(9),
-    LCONST_1(10),
+    LCONST_0(9, "lconst_l"),
+    LCONST_1(10, "lconst_l"),
     LDC(18, 1, "c"),
     LDC_W(19, 2, "C"),
     LDC2_W(20, 2, "C"),
     LDIV(109),
     LLOAD(22, 1, "L"),
-    LLOAD_0(30),
-    LLOAD_1(31),
-    LLOAD_2(32),
-    LLOAD_3(33),
+    LLOAD_0(30, "lload_n"),
+    LLOAD_1(31, "lload_n"),
+    LLOAD_2(32, "lload_n"),
+    LLOAD_3(33, "lload_n"),
     LMUL(105),
     LNEG(117),
     LOOKUPSWITCH(171, -1, "-"), // 8+
@@ -181,10 +181,10 @@ public enum Instruction {
     LSHL(121),
     LSHR(123),
     LSTORE(55, 1, "L"),
-    LSTORE_0(63),
-    LSTORE_1(64),
-    LSTORE_2(65),
-    LSTORE_3(66),
+    LSTORE_0(63, "lstore_n"),
+    LSTORE_1(64, "lstore_n"),
+    LSTORE_2(65, "lstore_n"),
+    LSTORE_3(66, "lstore_n"),
     LSUB(101),
     LUSHR(125),
     LXOR(131),
@@ -211,16 +211,34 @@ public enum Instruction {
     private final int extraBytes;
     private final String decodeExtraBytes;
 
+    private final String jvmsAnchor;
+
     Instruction(int opcode, int extraBytes, String decodeExtraBytes) {
         this.opcode = opcode;
         this.extraBytes = extraBytes;
         this.decodeExtraBytes = decodeExtraBytes;
+        this.jvmsAnchor = toString().toLowerCase();
     }
 
     Instruction(int opcode) {
         this.opcode = opcode;
         this.extraBytes = 0;
         this.decodeExtraBytes = null;
+        this.jvmsAnchor = toString().toLowerCase();
+    }
+
+    Instruction(int opcode, int extraBytes, String decodeExtraBytes, String jvmsAnchor) {
+        this.opcode = opcode;
+        this.extraBytes = extraBytes;
+        this.decodeExtraBytes = decodeExtraBytes;
+        this.jvmsAnchor = jvmsAnchor;
+    }
+
+    Instruction(int opcode, String jvmsAnchor) {
+        this.opcode = opcode;
+        this.extraBytes = 0;
+        this.decodeExtraBytes = null;
+        this.jvmsAnchor = jvmsAnchor;
     }
 
     public static Optional<Instruction> forOpcode(int opcode) {
@@ -237,5 +255,10 @@ public enum Instruction {
 
     public int getOpcode() {
         return opcode;
+    }
+
+    public String getJvmsAnchor()
+    {
+        return jvmsAnchor;
     }
 }
