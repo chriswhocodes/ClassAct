@@ -21,6 +21,11 @@ public class MethodParameters implements Attribute {
         entries[index] = entry;
     }
 
+    public MethodParametersEntry[] getEntries()
+    {
+        return entries;
+    }
+
     public String toString(ConstantPool constantPool) {
         StringBuilder builder = new StringBuilder();
 

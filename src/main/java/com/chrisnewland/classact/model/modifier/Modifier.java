@@ -9,12 +9,12 @@ public interface Modifier {
 
         for (Modifier modifier : modifiers) {
             if ((modifier.getFlag() & flags) > 0) {
-                builder.append(modifier).append(',');
+                builder.append(modifier).append(", ");
             }
         }
 
         if (builder.length() > 0) {
-            builder.deleteCharAt(builder.length() - 1);
+            builder.deleteCharAt(builder.length() - 2);
         }
 
         return builder.toString();

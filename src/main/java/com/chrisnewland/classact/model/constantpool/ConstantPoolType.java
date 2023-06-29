@@ -54,4 +54,10 @@ public enum ConstantPoolType {
 
         return result;
     }
+
+    @Override
+    public String toString()
+    {
+        return name().substring("CONSTANT_".length());
+    }
 }
