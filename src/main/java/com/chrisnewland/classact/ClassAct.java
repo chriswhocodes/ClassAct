@@ -560,7 +560,15 @@ public class ClassAct
     {
         debug("processSingleAttribute " + attributeName + " attributeLength " + attributeLength);
 
-        AttributeType attributeType = AttributeType.valueOf(attributeName);
+        AttributeType attributeType;
+        try 
+        {
+            attributeType = AttributeType.valueOf(attributeName);
+        } 
+        catch (IllegalArgumentException e)
+        {
+            attributeType = AttributeType.Unknown;
+        }
 
         switch (attributeType)
         {
