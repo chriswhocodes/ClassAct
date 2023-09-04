@@ -31,5 +31,6 @@ public enum AttributeType
 	NestHost,
 	NestMembers,
 	Record,
-	PermittedSubclasses
+	PermittedSubclasses,
+	Unknown
 }
