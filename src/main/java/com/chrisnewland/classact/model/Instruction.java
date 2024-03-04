@@ -3,15 +3,16 @@ package com.chrisnewland.classact.model;
 import java.util.Arrays;
 import java.util.Optional;
 
-public enum Instruction {
+public enum Instruction
+{
     AALOAD(50),
     AASTORE(83),
     ACONST_NULL(1),
     ALOAD(25, 1, "L"),
     ALOAD_0(42, "aload_n"),
-    ALOAD_1(43,"aload_n"),
-    ALOAD_2(44,"aload_n"),
-    ALOAD_3(45,"aload_n"),
+    ALOAD_1(43, "aload_n"),
+    ALOAD_2(44, "aload_n"),
+    ALOAD_3(45, "aload_n"),
     ANEWARRAY(189, 2, "C"),
     ARETURN(176),
     ARRAYLENGTH(190),
@@ -72,10 +73,10 @@ public enum Instruction {
     FCONST_2(13, "fconst_f"),
     FDIV(110),
     FLOAD(23, 1, "L"),
-    FLOAD_0(34,"fload_n"),
-    FLOAD_1(35,"fload_n"),
-    FLOAD_2(36,"fload_n"),
-    FLOAD_3(37,"fload_n"),
+    FLOAD_0(34, "fload_n"),
+    FLOAD_1(35, "fload_n"),
+    FLOAD_2(36, "fload_n"),
+    FLOAD_3(37, "fload_n"),
     FMUL(106),
     FNEG(118),
     FREM(114),
@@ -108,20 +109,20 @@ public enum Instruction {
     ICONST_4(7, "iconst_i"),
     ICONST_5(8, "iconst_i"),
     IDIV(108),
-    IF_ACMPEQ(165, 2, "i","if_acmp_cond"),
-    IF_ACMPNE(166, 2, "i","if_acmp_cond"),
+    IF_ACMPEQ(165, 2, "i", "if_acmp_cond"),
+    IF_ACMPNE(166, 2, "i", "if_acmp_cond"),
     IF_ICMPEQ(159, 2, "i", "if_icmp_cond"),
     IF_ICMPNE(160, 2, "i", "if_icmp_cond"),
     IF_ICMPLT(161, 2, "i", "if_icmp_cond"),
     IF_ICMPGE(162, 2, "i", "if_icmp_cond"),
     IF_ICMPGT(163, 2, "i", "if_icmp_cond"),
     IF_ICMPLE(164, 2, "i", "if_icmp_cond"),
-    IFEQ(153, 2, "i","if_cond"),
-    IFNE(154, 2, "i","if_cond"),
-    IFLT(155, 2, "i","if_cond"),
-    IFGE(156, 2, "i","if_cond"),
-    IFGT(157, 2, "i","if_cond"),
-    IFLE(158, 2, "i","if_cond"),
+    IFEQ(153, 2, "i", "if_cond"),
+    IFNE(154, 2, "i", "if_cond"),
+    IFLT(155, 2, "i", "if_cond"),
+    IFGE(156, 2, "i", "if_cond"),
+    IFGT(157, 2, "i", "if_cond"),
+    IFLE(158, 2, "i", "if_cond"),
     IFNONNULL(199, 2, "i"),
     IFNULL(198, 2, "i"),
     IINC(132, 2, "LB"),
@@ -213,52 +214,65 @@ public enum Instruction {
 
     private final String jvmsAnchor;
 
-    Instruction(int opcode, int extraBytes, String decodeExtraBytes) {
+    Instruction(int opcode, int extraBytes, String decodeExtraBytes)
+    {
         this.opcode = opcode;
         this.extraBytes = extraBytes;
         this.decodeExtraBytes = decodeExtraBytes;
         this.jvmsAnchor = toString().toLowerCase();
     }
 
-    Instruction(int opcode) {
+    Instruction(int opcode)
+    {
         this.opcode = opcode;
         this.extraBytes = 0;
         this.decodeExtraBytes = null;
         this.jvmsAnchor = toString().toLowerCase();
     }
 
-    Instruction(int opcode, int extraBytes, String decodeExtraBytes, String jvmsAnchor) {
+    Instruction(int opcode, int extraBytes, String decodeExtraBytes, String jvmsAnchor)
+    {
         this.opcode = opcode;
         this.extraBytes = extraBytes;
         this.decodeExtraBytes = decodeExtraBytes;
         this.jvmsAnchor = jvmsAnchor;
     }
 
-    Instruction(int opcode, String jvmsAnchor) {
+    Instruction(int opcode, String jvmsAnchor)
+    {
         this.opcode = opcode;
         this.extraBytes = 0;
         this.decodeExtraBytes = null;
         this.jvmsAnchor = jvmsAnchor;
     }
 
-    public static Optional<Instruction> forOpcode(int opcode) {
+    public static Optional<Instruction> forOpcode(int opcode)
+    {
         return Arrays.stream(values()).filter(cp -> cp.opcode == opcode).findFirst();
     }
 
-    public int getExtraBytes() {
+    public int getExtraBytes()
+    {
         return extraBytes;
     }
 
-    public String getDecodeExtraBytes() {
+    public String getDecodeExtraBytes()
+    {
         return decodeExtraBytes;
     }
 
-    public int getOpcode() {
+    public int getOpcode()
+    {
         return opcode;
     }
 
     public String getJvmsAnchor()
     {
         return jvmsAnchor;
+    }
+
+    public boolean isInvoke()
+    {
+        return this == INVOKEDYNAMIC || this == INVOKEINTERFACE || this == INVOKESPECIAL || this == INVOKESTATIC || this == INVOKEVIRTUAL;
     }
 }
